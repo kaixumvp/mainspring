@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 
-from src.ports import Checkpointer
+from ouroboros.ports import Checkpointer
 
 
 class InMemoryCheckpointer:

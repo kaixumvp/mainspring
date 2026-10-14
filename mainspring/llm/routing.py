@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 
-from src.ports import LLMGateway, LLMResponse, Usage
+from ouroboros.ports import LLMGateway, LLMResponse, Usage
 
 logger = logging.getLogger(__name__)
 

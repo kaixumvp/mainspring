@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from src.ports import LLMResponse
+from ouroboros.ports import LLMResponse
 
 
 class RecordingGateway:

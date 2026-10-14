@@ -7,8 +7,8 @@ similarity-based dedup. `reflect`-based scoring, forgetting, and the Memory Grap
 
 import logging
 
-from src.memory.reflect import Reflector
-from src.ports import LongTermMemory
+from ouroboros.memory.reflect import Reflector
+from ouroboros.ports import LongTermMemory
 
 logger = logging.getLogger(__name__)
 

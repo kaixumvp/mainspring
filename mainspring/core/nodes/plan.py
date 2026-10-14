@@ -1,8 +1,8 @@
 import json
 import logging
 
-from src.core.state import AgentState, PlanStep
-from src.llm.base import LLMGateway
+from ouroboros.core.state import AgentState, PlanStep
+from ouroboros.llm.base import LLMGateway
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ import json
 from collections import OrderedDict
 from collections.abc import Callable
 
-from src.ports import LLMResponse
+from ouroboros.ports import LLMResponse
 
 
 class CachingGateway:

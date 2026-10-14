@@ -3,6 +3,6 @@
 Re-exported here for backward compatibility with V0.2 imports.
 """
 
-from src.ports import LLMGateway, LLMResponse, ToolCall, Usage
+from ouroboros.ports import LLMGateway, LLMResponse, ToolCall, Usage
 
 __all__ = ["LLMGateway", "LLMResponse", "ToolCall", "Usage"]

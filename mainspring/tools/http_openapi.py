@@ -12,7 +12,7 @@ from typing import Any
 
 import httpx
 
-from src.tools.base import BaseTool, ToolResult
+from ouroboros.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
 

@@ -277,8 +277,8 @@
     App-&gt;&gt;R: register_tool(tool)
     R-&gt;&gt;R: ToolAsPlugin(tool)
     R-&gt;&gt;R: index by name/ref/function_name
-    App-&gt;&gt;G: build_graph(llm, registry, model, config)
-    App-&gt;&gt;G: run_agent(initial_state)
+    App-&gt;&gt;G: AgentRuntime.run(definition, task, context, deps)
+    G-&gt;&gt;G: plan node
     G-&gt;&gt;LLM: plan messages
     LLM--&gt;&gt;G: plan
     G-&gt;&gt;R: to_openai_schema()
@@ -333,14 +333,14 @@
         <table>
           <thead><tr><th>UML 元素</th><th>代码位置</th></tr></thead>
           <tbody>
-            <tr><td><code>Plugin</code>, <code>PluginManifest</code>, <code>InvokeContext</code>, <code>ToolAsPlugin</code></td><td><code>src/ouroboros/plugins/base.py</code></td></tr>
-            <tr><td><code>PluginRegistry</code></td><td><code>src/ouroboros/plugins/registry.py</code></td></tr>
-            <tr><td><code>Tool</code>, <code>BaseTool</code>, <code>ToolResult</code></td><td><code>src/ouroboros/tools/base.py</code></td></tr>
-            <tr><td>Built-in tools</td><td><code>src/ouroboros/tools/builtin/</code></td></tr>
-            <tr><td><code>Skill</code>, <code>build_skill</code></td><td><code>src/ouroboros/skills/base.py</code></td></tr>
-            <tr><td><code>PromptSkill</code>, <code>FunctionSkill</code>, <code>FlowSkill</code>, <code>AgentSkill</code></td><td><code>src/ouroboros/skills/</code></td></tr>
-            <tr><td><code>SkillManager</code></td><td><code>src/ouroboros/skills/manager.py</code></td></tr>
-            <tr><td>Graph execution</td><td><code>src/ouroboros/core/graph.py</code> and <code>src/ouroboros/core/nodes/</code></td></tr>
+            <tr><td><code>Plugin</code>, <code>PluginManifest</code>, <code>InvokeContext</code>, <code>ToolAsPlugin</code></td><td><code>ouroboros/plugins/base.py</code></td></tr>
+            <tr><td><code>PluginRegistry</code></td><td><code>ouroboros/plugins/registry.py</code></td></tr>
+            <tr><td><code>Tool</code>, <code>BaseTool</code>, <code>ToolResult</code></td><td><code>ouroboros/tools/base.py</code></td></tr>
+            <tr><td>Built-in tools</td><td><code>ouroboros/tools/builtin/</code></td></tr>
+            <tr><td><code>Skill</code>, <code>build_skill</code></td><td><code>ouroboros/skills/base.py</code></td></tr>
+            <tr><td><code>PromptSkill</code>, <code>FunctionSkill</code>, <code>FlowSkill</code>, <code>AgentSkill</code></td><td><code>ouroboros/skills/</code></td></tr>
+            <tr><td><code>SkillManager</code></td><td><code>ouroboros/skills/manager.py</code></td></tr>
+            <tr><td>Runtime execution</td><td><code>ouroboros/core/runtime.py</code> and <code>ouroboros/core/nodes/</code></td></tr>
           </tbody>
         </table>
       </section>

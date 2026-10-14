@@ -4,9 +4,9 @@ Implements the memory surface (write / recall / consolidate) by delegating to th
 Brain and Long-Term Memory ports. The Memory Graph is V0.3.
 """
 
-from src.memory.consolidator import Consolidator
-from src.memory.working import WorkingBrain
-from src.ports import LongTermMemory, MemoryEntry, WorkingMemory
+from ouroboros.memory.consolidator import Consolidator
+from ouroboros.memory.working import WorkingBrain
+from ouroboros.ports import LongTermMemory, MemoryEntry, WorkingMemory
 
 
 class MemoryManager:

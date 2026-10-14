@@ -3,12 +3,12 @@ import json
 import logging
 import time
 
-from src.core.state import AgentState
-from src.observability.metrics import noop_metrics
-from src.observability.trace import default_tracer
-from src.plugins.base import InvokeContext
-from src.plugins.registry import PluginRegistry
-from src.ports import PermissionChecker, PermissionContext, PermissionDecision
+from ouroboros.core.state import AgentState
+from ouroboros.observability.metrics import noop_metrics
+from ouroboros.observability.trace import default_tracer
+from ouroboros.plugins.base import InvokeContext
+from ouroboros.plugins.registry import PluginRegistry
+from ouroboros.ports import PermissionChecker, PermissionContext, PermissionDecision
 
 logger = logging.getLogger(__name__)
 

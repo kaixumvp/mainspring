@@ -2,9 +2,9 @@
 
 import logging
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"
 
-from src.core.runtime import (  # noqa: E402
+from ouroboros.core.runtime import (  # noqa: E402
     AgentDefinition,
     AgentRuntime,
     RunContext,
@@ -27,4 +27,4 @@ __all__ = [
 
 # Library best practice: attach a NullHandler so an unconfigured host doesn't emit
 # "No handlers could be found" warnings from our loggers.
-logging.getLogger("src").addHandler(logging.NullHandler())
+logging.getLogger("ouroboros").addHandler(logging.NullHandler())

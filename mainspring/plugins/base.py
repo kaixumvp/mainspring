@@ -7,7 +7,7 @@ re-exports the contract names for backward compatibility.
 
 from typing import Any
 
-from src.ports import InvokeContext, Plugin, PluginManifest
+from ouroboros.ports import InvokeContext, Plugin, PluginManifest
 
 __all__ = ["Plugin", "PluginManifest", "InvokeContext", "ToolAsPlugin"]
 

@@ -1,4 +1,4 @@
-from src.evaluation.golden import (
+from ouroboros.evaluation.golden import (
     Case,
     EvaluationResult,
     GoldenSet,

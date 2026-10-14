@@ -1,5 +1,7 @@
 # Plugins, Tools and Skills UML
 
+> 本文档统一归档于仓库根的 `documentation/ouroboros/`。
+
 本文档描述 Ouroboros 当前实现中 plugins、tools、skills 的核心结构和调用关系。
 
 ## 1. 核心类图
@@ -177,8 +179,8 @@ sequenceDiagram
     R->>R: ToolAsPlugin(tool)
     R->>R: index by name/ref/function_name
 
-    App->>G: build_graph(llm, registry, model, config)
-    App->>G: run_agent(initial_state)
+    App->>G: AgentRuntime.run(definition, task, context, deps)
+    G->>G: plan node
     G->>LLM: plan messages
     LLM-->>G: plan
     G->>R: to_openai_schema()
@@ -194,7 +196,7 @@ sequenceDiagram
     G->>G: observe(result, iteration)
     G->>LLM: next decide request
     LLM-->>G: final answer
-    G-->>App: final state + steps
+    G-->>App: RunResult(status, result, steps)
 ```
 
 ## 3. 注册和解析关系
@@ -221,21 +223,21 @@ flowchart TD
 
 | UML 元素 | 代码位置 |
 | --- | --- |
-| `Plugin`, `PluginManifest`, `InvokeContext`, `ToolAsPlugin` | `src/ouroboros/plugins/base.py` |
-| `PluginRegistry` | `src/ouroboros/plugins/registry.py` |
-| `Tool`, `BaseTool`, `ToolResult` | `src/ouroboros/tools/base.py` |
-| Built-in tools | `src/ouroboros/tools/builtin/` |
-| `Skill`, `build_skill` | `src/ouroboros/skills/base.py` |
-| `PromptSkill`, `FunctionSkill`, `FlowSkill`, `AgentSkill` | `src/ouroboros/skills/` |
-| `SkillManager` | `src/ouroboros/skills/manager.py` |
-| Graph execution | `src/ouroboros/core/graph.py` and `src/ouroboros/core/nodes/` |
+| `Plugin`, `PluginManifest`, `InvokeContext`, `ToolAsPlugin` | `ouroboros/plugins/base.py` |
+| `PluginRegistry` | `ouroboros/plugins/registry.py` |
+| `Tool`, `BaseTool`, `ToolResult` | `ouroboros/tools/base.py` |
+| Built-in tools | `ouroboros/tools/builtin/` |
+| `Skill`, `build_skill` | `ouroboros/skills/base.py` |
+| `PromptSkill`, `FunctionSkill`, `FlowSkill`, `AgentSkill` | `ouroboros/skills/` |
+| `SkillManager` | `ouroboros/skills/manager.py` |
+| Runtime execution | `ouroboros/core/runtime.py` and `ouroboros/core/nodes/` |
 
 ## 5. 示例
 
-在 Graph 中集成 skill 的最小示例见 `example/skills_example.py`：
+在 `AgentRuntime` 中集成 skill 的最小示例见 `example/skills_example.py`：
 
 1. 用 `SkillManager` 从 record 构建 skill。
 2. 用 `PluginRegistry.register` 注册 skill。
-3. 用 `build_graph` 将 registry 交给运行图。
+3. 把 `registry.all()` 作为 `AgentDefinition.plugins` 交给 `AgentRuntime.run(...)`。
 4. LLM 根据 schema 选择 skill。
 5. `execute` 节点通过 `registry.invoke` 执行 skill。

@@ -1,5 +1,5 @@
-from src.observability.metrics import InMemoryMetrics, NoopMetrics, noop_metrics
-from src.observability.trace import Tracer, default_tracer, get_tracer
+from ouroboros.observability.metrics import InMemoryMetrics, NoopMetrics, noop_metrics
+from ouroboros.observability.trace import Tracer, default_tracer, get_tracer
 
 __all__ = [
     "Tracer",

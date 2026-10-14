@@ -1,6 +1,6 @@
 import logging
 
-from src.tools.base import Tool, ToolResult
+from ouroboros.tools.base import Tool, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +64,8 @@ class ToolRegistry:
 
 
 def build_default_registry() -> ToolRegistry:
-    from src.tools.builtin.calculator import CalculatorTool
-    from src.tools.builtin.http import HttpTool
+    from ouroboros.tools.builtin.calculator import CalculatorTool
+    from ouroboros.tools.builtin.http import HttpTool
 
     registry = ToolRegistry()
     registry.register(CalculatorTool())

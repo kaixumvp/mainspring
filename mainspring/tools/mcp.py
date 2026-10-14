@@ -11,7 +11,7 @@ from typing import Any
 
 import httpx
 
-from src.tools.base import BaseTool, ToolResult
+from ouroboros.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class McpClient:
         return data.get("result", {})
 
     async def initialize(self) -> None:
-        await self._rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "smartagent", "version": "0.2.0"}})
+        await self._rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "ouroboros", "version": "2.0.0"}})
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> str:
         result = await self._rpc("tools/call", {"name": name, "arguments": arguments})

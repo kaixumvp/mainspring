@@ -1,4 +1,4 @@
-from src.events.events import (
+from ouroboros.events.events import (
     RuntimeEvent,
     run_approved,
     run_awaiting_human,

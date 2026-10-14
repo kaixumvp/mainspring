@@ -1,7 +1,7 @@
 import re
 
-from src.plugins.base import InvokeContext
-from src.skills.base import Skill
+from ouroboros.plugins.base import InvokeContext
+from ouroboros.skills.base import Skill
 
 _TOKEN = re.compile(r"\{\{\s*([\w.]+)\s*\}\}")
 

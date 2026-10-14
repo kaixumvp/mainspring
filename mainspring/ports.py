@@ -4,7 +4,7 @@ The framework depends ONLY on these protocols/types (plus its own modules); the 
 layer implements them. This keeps the framework free of any import of the host's storage,
 HTTP, or configuration.
 
-V0.3 consolidates *all* framework↔host contracts here so that ``import src.ports``
+V0.3 consolidates *all* framework↔host contracts here so that ``import ouroboros.ports``
 is the single place to read the ABI. Concrete implementations (LiteLLM gateway/embedder,
 Redis working memory, …) stay in their own modules and re-export the protocol for
 backward compatibility.

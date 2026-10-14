@@ -1,9 +1,9 @@
 import json
 import logging
 
-from src.core.state import AgentState
-from src.ports import LLMGateway
-from src.security import TOOL_RESULT_GUARD, wrap_tool_result
+from ouroboros.core.state import AgentState
+from ouroboros.ports import LLMGateway
+from ouroboros.security import TOOL_RESULT_GUARD, wrap_tool_result
 
 logger = logging.getLogger(__name__)
 

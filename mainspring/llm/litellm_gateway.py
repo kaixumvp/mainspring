@@ -3,7 +3,7 @@ import logging
 
 import litellm
 
-from src.llm.base import LLMResponse, ToolCall, Usage
+from ouroboros.llm.base import LLMResponse, ToolCall, Usage
 
 logger = logging.getLogger(__name__)
 

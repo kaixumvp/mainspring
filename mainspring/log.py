@@ -8,7 +8,7 @@ logging setup.
 Enable framework logs from a host application::
 
     import logging
-    from src.log import configure_logging
+    from ouroboros.log import configure_logging
 
     configure_logging(level=logging.INFO)
 """
@@ -30,7 +30,7 @@ def configure_logging(level: int = logging.INFO, fmt: str | None = None) -> logg
     the configured ``ouroboros`` logger.
     """
     global _configured
-    logger = logging.getLogger("src")
+    logger = logging.getLogger("ouroboros")
     if _configured:
         return logger
 

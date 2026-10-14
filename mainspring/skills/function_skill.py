@@ -5,8 +5,8 @@ import json
 import subprocess
 import sys
 
-from src.plugins.base import InvokeContext
-from src.skills.base import Skill
+from ouroboros.plugins.base import InvokeContext
+from ouroboros.skills.base import Skill
 
 # Restricted builtins available to a function-skill. This is a best-effort guard, not a
 # security boundary: even without `__import__` a determined payload can still reach Python's

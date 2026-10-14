@@ -1,6 +1,6 @@
-from src.core.checkpointer import InMemoryCheckpointer
-from src.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
-from src.core.runtime import (
+from ouroboros.core.checkpointer import InMemoryCheckpointer
+from ouroboros.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
+from ouroboros.core.runtime import (
     AgentDefinition,
     AgentRuntime,
     RunContext,
@@ -9,7 +9,7 @@ from src.core.runtime import (
     RuntimeDeps,
     Step,
 )
-from src.core.state import AgentState, PlanStep
+from ouroboros.core.state import AgentState, PlanStep
 
 __all__ = [
     "AgentState",

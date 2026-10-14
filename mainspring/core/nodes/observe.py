@@ -1,6 +1,6 @@
 import logging
 
-from src.core.state import AgentState
+from ouroboros.core.state import AgentState
 
 logger = logging.getLogger(__name__)
 

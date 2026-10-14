@@ -10,7 +10,7 @@ import re
 
 import litellm
 
-from src.ports import Embedder
+from ouroboros.ports import Embedder
 
 __all__ = ["Embedder", "LiteLLMEmbedder", "HashEmbedder"]
 

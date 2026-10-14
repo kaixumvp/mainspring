@@ -18,12 +18,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.core.nodes import decide as decide_mod
-from src.core.nodes import execute as execute_mod
-from src.core.nodes import observe as observe_mod
-from src.core.nodes import plan as plan_mod
-from src.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
-from src.events.events import (
+from ouroboros.core.nodes import decide as decide_mod
+from ouroboros.core.nodes import execute as execute_mod
+from ouroboros.core.nodes import observe as observe_mod
+from ouroboros.core.nodes import plan as plan_mod
+from ouroboros.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
+from ouroboros.events.events import (
     run_approved,
     run_awaiting_human,
     run_completed,
@@ -31,11 +31,11 @@ from src.events.events import (
     run_started,
     step_completed,
 )
-from src.llm.cost import TokenBudgetExceeded
-from src.observability.metrics import noop_metrics
-from src.observability.trace import default_tracer
-from src.plugins.registry import PluginRegistry
-from src.ports import (
+from ouroboros.llm.cost import TokenBudgetExceeded
+from ouroboros.observability.metrics import noop_metrics
+from ouroboros.observability.trace import default_tracer
+from ouroboros.plugins.registry import PluginRegistry
+from ouroboros.ports import (
     Checkpointer,
     Embedder,
     EventSink,
@@ -49,7 +49,7 @@ from src.ports import (
     SubagentRunner,
     WorkingMemory,
 )
-from src.security import Redactor, default_redactor
+from ouroboros.security import Redactor, default_redactor
 
 logger = logging.getLogger(__name__)
 

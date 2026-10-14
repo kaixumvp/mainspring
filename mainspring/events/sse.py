@@ -8,7 +8,7 @@ working, and ``SSEEvent.serialize`` remains as a convenience for hosts mid-migra
 import json
 import warnings
 
-from src.events.events import (
+from ouroboros.events.events import (
     RuntimeEvent,
     run_approved,
     run_awaiting_human,
@@ -20,7 +20,7 @@ from src.events.events import (
 )
 
 warnings.warn(
-    "src.events.sse is deprecated; use src.events (RuntimeEvent) and serialize on the host.",
+    "ouroboros.events.sse is deprecated; use ouroboros.events (RuntimeEvent) and serialize on the host.",
     DeprecationWarning,
     stacklevel=2,
 )

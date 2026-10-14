@@ -1,4 +1,4 @@
-from src.tools.builtin.calculator import CalculatorTool
-from src.tools.builtin.http import HttpTool
+from ouroboros.tools.builtin.calculator import CalculatorTool
+from ouroboros.tools.builtin.http import HttpTool
 
 __all__ = ["CalculatorTool", "HttpTool"]

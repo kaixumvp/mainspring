@@ -2,7 +2,7 @@ import ast
 import logging
 import operator
 
-from src.tools.base import BaseTool, ToolResult
+from ouroboros.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
 

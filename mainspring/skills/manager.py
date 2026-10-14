@@ -1,7 +1,7 @@
 from typing import Any
 
-from src.plugins.base import PluginManifest
-from src.skills.base import RunFlow, RunSubagent, Skill, build_skill
+from ouroboros.plugins.base import PluginManifest
+from ouroboros.skills.base import RunFlow, RunSubagent, Skill, build_skill
 
 
 class SkillManager:
