@@ -1,14 +1,14 @@
-# Ouroboros Agent 框架使用文档
+# Mainspring Agent 框架使用文档
 
-本文面向使用 Ouroboros 的宿主开发者。Python 安装约束及所有可选能力见
-[项目 README](../../application/ouroboros/README.md) 与 [`pyproject.toml`](../../application/ouroboros/pyproject.toml)。
+本文面向使用 Mainspring 的宿主开发者。Python 安装约束及所有可选能力见
+[项目 README](../../application/mainspring/README.md) 与 [`pyproject.toml`](../../application/mainspring/pyproject.toml)。
 
 ## 1. 适用边界
 
-Ouroboros 提供 Agent 循环、插件协议、工具/技能执行和运行时端口；宿主负责 HTTP、身份、租户、持久化、
+Mainspring 提供 Agent 循环、插件协议、工具/技能执行和运行时端口；宿主负责 HTTP、身份、租户、持久化、
 密钥、业务授权上下文与外部服务的装配。框架不会替宿主创建数据库或配置 Web 服务。
 
-框架当前版本为 2.0.0，公开导入包名为 `ouroboros`，不再使用 `src`。
+框架当前版本为 3.0.0，公开导入包名为 `mainspring`（2.0.0 起为 `ouroboros`，此前为 `src`）。
 
 ## 2. 运行 Agent 的最小结构
 
@@ -23,13 +23,13 @@ Ouroboros 提供 Agent 循环、插件协议、工具/技能执行和运行时�
 可恢复运行使用 `AgentRuntime.resume(...)` 与宿主 checkpoint。
 
 ```python
-from ouroboros.core.runtime import (
+from mainspring.core.runtime import (
     AgentDefinition,
     AgentRuntime,
     RunContext,
     RuntimeDeps,
 )
-from ouroboros.llm.litellm_gateway import LiteLLMGateway
+from mainspring.llm.litellm_gateway import LiteLLMGateway
 
 definition = AgentDefinition(
     model="your-model",
@@ -70,7 +70,7 @@ execute 节点会在调用前通过注入的权限端口检查。
 | `Checkpointer` | 进程间可持久化的 checkpoint |
 | `SubagentRunner` | 子 Agent 的业务上下文与隔离 session |
 
-协议定义集中于 `ouroboros.ports`。宿主可组合框架公开的 registry、gateway、memory 等模块，但不要依赖
+协议定义集中于 `mainspring.ports`。宿主可组合框架公开的 registry、gateway、memory 等模块，但不要依赖
 `core` 内部节点和 state 结构作为自己的持久化格式。
 
 ## 5. 相关资料
@@ -78,4 +78,4 @@ execute 节点会在调用前通过注入的权限端口检查。
 - [Agent 框架详细设计](./Agent框架层详细设计.md)
 - [框架版本规划](./版本规划.md)
 - [业务层接入约束](../platformagent/业务层详细设计.md)
-- [Ouroboros README](../../application/ouroboros/README.md)
+- [Mainspring README](../../application/mainspring/README.md)

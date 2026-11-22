@@ -1,7 +1,7 @@
 import pytest
 
-from ouroboros.observability.metrics import InMemoryMetrics, NoopMetrics
-from ouroboros.observability.trace import Tracer, get_tracer
+from mainspring.observability.metrics import InMemoryMetrics, NoopMetrics
+from mainspring.observability.trace import Tracer, get_tracer
 
 
 # OpenTelemetry is not installed in the test env → Tracer degrades to no-op.
@@ -36,10 +36,10 @@ def test_in_memory_metrics_records():
 @pytest.mark.asyncio
 async def test_runtime_records_metrics_and_redacts():
     from conftest import MockLLMGateway, build_default_plugins
-    from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-    from ouroboros.core.resilience import RetryPolicy
-    from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-    from ouroboros.security import Redactor
+    from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+    from mainspring.core.resilience import RetryPolicy
+    from mainspring.llm.base import LLMResponse, ToolCall, Usage
+    from mainspring.security import Redactor
 
     llm = MockLLMGateway([
         LLMResponse(tool_calls=[ToolCall(id="c1", name="calculator", arguments={"expression": "3*8+100"})]),
@@ -52,6 +52,6 @@ async def test_runtime_records_metrics_and_redacts():
     result = await AgentRuntime().run(definition, "计算", RunContext(run_id="r1"), deps)
 
     assert result.status == "completed"
-    assert any(key[0] == "ouroboros.runs" for key in metrics.counters)
-    assert any(key[0] == "ouroboros.tool.calls" for key in metrics.counters)
-    assert any(name == "ouroboros.step.latency_ms" for name, _, _ in metrics.observations)
+    assert any(key[0] == "mainspring.runs" for key in metrics.counters)
+    assert any(key[0] == "mainspring.tool.calls" for key in metrics.counters)
+    assert any(name == "mainspring.step.latency_ms" for name, _, _ in metrics.observations)

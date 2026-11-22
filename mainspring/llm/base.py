@@ -1,9 +1,18 @@
-"""Deprecated: LLM contracts now live in ``ouroboros.ports`` (V0.3 consolidation).
+"""Deprecated: LLM contracts now live in ``mainspring.ports`` (V0.3 consolidation).
 
 Re-exported here for backward compatibility with V0.2 imports.
 """
 
-from ouroboros.ports import ChatChunk, LLMGateway, LLMResponse, StreamingLLMGateway, ToolCall, ToolCallDelta, Usage
+from mainspring.ports import (
+    ChatChunk,
+    LLMGateway,
+    LLMResponse,
+    StreamingLLMGateway,
+    StructuredOutputError,
+    ToolCall,
+    ToolCallDelta,
+    Usage,
+)
 
 __all__ = [
     "LLMGateway",
@@ -13,4 +22,5 @@ __all__ = [
     "ToolCall",
     "ToolCallDelta",
     "Usage",
+    "StructuredOutputError",
 ]

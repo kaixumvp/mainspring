@@ -1,8 +1,8 @@
-# Ouroboros Agent 框架层详细设计
+# Mainspring Agent 框架层详细设计
 
 ## 1. 设计目标
 
-Ouroboros 是可独立安装的业务无关 Agent Runtime。它提供运行机制和扩展协议，不持有 PlatformAgent 的
+Mainspring 是可独立安装的业务无关 Agent Runtime。它提供运行机制和扩展协议，不持有 PlatformAgent 的
 HTTP、数据库、租户、凭据或权限数据。
 
 ```text
@@ -16,7 +16,7 @@ AgentRuntime.run / resume
         └── ports → 宿主适配器
 ```
 
-当前发布版本 2.0.0 的包名为 `ouroboros`。版本细节见[框架路线图](./版本规划.md)。
+当前发布版本 2.0.0 的包名为 `mainspring`。版本细节见[框架路线图](./版本规划.md)。
 
 ## 2. 运行时职责
 
@@ -45,7 +45,7 @@ Skill 执行分为：
 
 ## 4. Ports & Adapters
 
-框架在 `ouroboros.ports` 定义协议与纯数据类型，宿主在运行前注入实现。协议定义不等同于宿主实现已经存在：
+框架在 `mainspring.ports` 定义协议与纯数据类型，宿主在运行前注入实现。协议定义不等同于宿主实现已经存在：
 例如框架可以定义 `Knowledge` 和 `Retriever`，PlatformAgent 仍需自行实现索引、摄取、查询和来源管理。
 
 框架包含可选的 memory/gateway/registry 实现模块，但宿主不得把框架内部的 `AgentState`、节点调用顺序或私有
@@ -60,6 +60,6 @@ Skill 执行分为：
 
 ## 6. 对应实现
 
-代码与测试位于 [`application/ouroboros/`](../../application/ouroboros/)；使用方式见
+代码与测试位于 [`application/mainspring/`](../../application/mainspring/)；使用方式见
 [框架使用文档](./Agent框架使用文档.md)，Plugins/Tools/Skills 关系见
 [UML](./plugins-tools-skills-uml.md)。

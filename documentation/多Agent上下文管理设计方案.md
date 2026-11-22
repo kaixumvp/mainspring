@@ -1,7 +1,7 @@
-# Ouroboros 多 Agent 上下文管理设计方案
+# Mainspring 多 Agent 上下文管理设计方案
 
 > 文档状态：设计提案，尚未实现。
-> 适用基线：Ouroboros 2.0.0；当前单 Agent 上下文设计见[上下文管理设计方案](./上下文管理设计方案.md)。
+> 适用基线：Mainspring 3.0.0；当前单 Agent 上下文设计见[上下文管理设计方案](./上下文管理设计方案.md)。
 
 ## 1. 目标与核心原则
 
@@ -39,7 +39,7 @@
   → 字符串作为父 Agent 的工具结果
 ```
 
-当前 [AgentSkill](../../application/ouroboros/ouroboros/skills/agent_skill.py) 从 `task` 参数或其他参数的 JSON 序列化结果构造任务；[SubagentRunner](../../application/ouroboros/ouroboros/ports.py) 接收 `agent_ref`、task 字符串和 `InvokeContext`，返回字符串。PlatformAgent 的 [DbSubagentRunner](../../application/platformagent/backend/src/smartagent/adapters/subagent_runner.py) 为子 Agent 创建独立 Run，并通过 `parent_run_id` 关联父运行。
+当前 [AgentSkill](../../application/mainspring/mainspring/skills/agent_skill.py) 从 `task` 参数或其他参数的 JSON 序列化结果构造任务；[SubagentRunner](../../application/mainspring/mainspring/ports.py) 接收 `agent_ref`、task 字符串和 `InvokeContext`，返回字符串。PlatformAgent 的 [DbSubagentRunner](../../application/platformagent/backend/src/smartagent/adapters/subagent_runner.py) 为子 Agent 创建独立 Run，并通过 `parent_run_id` 关联父运行。
 
 ### 2.2 已有的隔离优势
 
@@ -312,7 +312,7 @@ Host / Root Orchestrator
 
 任何步骤被拒绝都应返回明确的委派错误/状态，并留下可审计事件；失败不能伪装成成功文本。
 
-## 7. 与现有 Ouroboros 的改动点
+## 7. 与现有 Mainspring 的改动点
 
 ### 7.1 框架层
 
@@ -401,5 +401,5 @@ Host / Root Orchestrator
 
 - [单 Agent 上下文管理设计方案](./上下文管理设计方案.md)：每次模型请求的预算、压缩、工具与历史治理。
 - [多任务依赖调度与新架构设计](./多任务依赖调度与新架构设计.md)：任务图、依赖调度和结果合并方案。
-- [Ouroboros 架构总结](./架构总结.md)：当前 AgentRuntime、端口、AgentSkill 和宿主边界。
+- [Mainspring 架构总结](./架构总结.md)：当前 AgentRuntime、端口、AgentSkill 和宿主边界。
 - [Agent 框架层详细设计](./Agent框架层详细设计.md)：Ports & Adapters 责任划分。

@@ -1,4 +1,4 @@
-from ouroboros.ports import (
+from mainspring.ports import (
     JudgeVerdict,
     MemoryEntry,
     PermissionContext,

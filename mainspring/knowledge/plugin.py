@@ -10,8 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from ouroboros.plugins.base import InvokeContext
-from ouroboros.ports import PluginManifest, Retriever
+from mainspring.plugins.base import InvokeContext
+from mainspring.ports import PluginManifest, Retriever
 
 _QUERY_SCHEMA = {
     "type": "object",

@@ -1,7 +1,7 @@
 import logging
 
-from ouroboros.core.state import AgentState
-from ouroboros.security import wrap_tool_result
+from mainspring.core.state import AgentState
+from mainspring.security import wrap_tool_result
 
 logger = logging.getLogger(__name__)
 

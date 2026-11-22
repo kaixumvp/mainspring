@@ -3,12 +3,12 @@ requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "ouroboros"
-version = "2.1.0"
-description = "Ouroboros: a business-agnostic agent runtime (Plan → Decide → Execute → Observe loop) with plugins, skills, tools, and memory."
+name = "mainspring"
+version = "3.3.0"
+description = "Mainspring: a business-agnostic agent runtime (Plan → Decide → Execute → Observe loop) with plugins, skills, tools, and memory."
 readme = "README.md"
 license = "MIT"
-packages = [{ include = "ouroboros" }]
+packages = [{ include = "mainspring" }]
 keywords = ["agent", "llm", "framework", "plugins", "skills", "tools", "memory"]
 
 [tool.poetry.dependencies]

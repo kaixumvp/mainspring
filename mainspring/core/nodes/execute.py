@@ -3,12 +3,12 @@ import json
 import logging
 import time
 
-from ouroboros.core.state import FINISH, AgentState
-from ouroboros.observability.metrics import noop_metrics
-from ouroboros.observability.trace import default_tracer
-from ouroboros.plugins.base import InvokeContext
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import (
+from mainspring.core.state import FINISH, AgentState
+from mainspring.observability.metrics import noop_metrics
+from mainspring.observability.trace import default_tracer
+from mainspring.plugins.base import InvokeContext
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import (
     PermissionChecker,
     PermissionContext,
     PermissionDecision,
@@ -143,7 +143,7 @@ async def _invoke_one(state: AgentState, registry: PluginRegistry, call: dict, t
         action_input = {**action_input, "memory_ctx": state.get("memory_ctx") or []}
 
     start = time.perf_counter()
-    with tracer.start_span(f"ouroboros.plugin.{name}", attributes={"plugin": name, "kind": manifest.kind}) as span:
+    with tracer.start_span(f"mainspring.plugin.{name}", attributes={"plugin": name, "kind": manifest.kind}) as span:
         try:
             result = await registry.invoke(name, ctx, **action_input)
         except Exception as exc:  # noqa: BLE001 — log, mark span, re-raise for the runtime's retry
@@ -151,6 +151,6 @@ async def _invoke_one(state: AgentState, registry: PluginRegistry, call: dict, t
             tracer.record_error(span, exc)
             raise
 
-    metrics.incr("ouroboros.tool.calls", labels={"name": name})
-    metrics.observe("ouroboros.tool.latency_ms", int((time.perf_counter() - start) * 1000), {"name": name})
+    metrics.incr("mainspring.tool.calls", labels={"name": name})
+    metrics.observe("mainspring.tool.latency_ms", int((time.perf_counter() - start) * 1000), {"name": name})
     return _coerce_result(result)

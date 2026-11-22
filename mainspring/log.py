@@ -1,14 +1,14 @@
-"""Logging helpers for Ouroboros.
+"""Logging helpers for Mainspring.
 
-The framework emits records via the standard :mod:`logging` module under the ``ouroboros``
-namespace (e.g. ``ouroboros.core.runtime``). It never configures handlers or levels itself —
-that is the host's job — so embedding Ouroboros in another app won't hijack that app's
+The framework emits records via the standard :mod:`logging` module under the ``mainspring``
+namespace (e.g. ``mainspring.core.runtime``). It never configures handlers or levels itself —
+that is the host's job — so embedding Mainspring in another app won't hijack that app's
 logging setup.
 
 Enable framework logs from a host application::
 
     import logging
-    from ouroboros.log import configure_logging
+    from mainspring.log import configure_logging
 
     configure_logging(level=logging.INFO)
 """
@@ -24,13 +24,13 @@ _configured = False
 
 
 def configure_logging(level: int = logging.INFO, fmt: str | None = None) -> logging.Logger:
-    """Configure the ``ouroboros`` logger with a stderr handler (idempotent).
+    """Configure the ``mainspring`` logger with a stderr handler (idempotent).
 
     Hosts call this to opt in to framework logging; the framework itself never does. Returns
-    the configured ``ouroboros`` logger.
+    the configured ``mainspring`` logger.
     """
     global _configured
-    logger = logging.getLogger("ouroboros")
+    logger = logging.getLogger("mainspring")
     if _configured:
         return logger
 

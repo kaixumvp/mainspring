@@ -2,8 +2,8 @@ import math
 
 import pytest
 
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.llm.embedder import HashEmbedder
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.llm.embedder import HashEmbedder
 
 
 def test_llm_response_defaults():

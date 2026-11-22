@@ -1,4 +1,4 @@
-from ouroboros.events.events import (
+from mainspring.events.events import (
     RuntimeEvent,
     run_approved,
     run_awaiting_human,

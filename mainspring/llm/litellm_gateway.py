@@ -4,7 +4,8 @@ from collections.abc import AsyncIterator
 
 import litellm
 
-from ouroboros.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
+from mainspring.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
+from mainspring.llm.structured import parse_structured
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class LiteLLMGateway:
         self._api_key = api_key
         self._api_base = api_base
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         model = model or self._model
         kwargs: dict = {"model": model, "messages": messages}
         if self._api_key:
@@ -26,6 +27,9 @@ class LiteLLMGateway:
             kwargs["api_base"] = self._api_base
         if tools:
             kwargs["tools"] = tools
+        if schema is not None:
+            # Provider-agnostic JSON mode; the schema itself is enforced framework-side.
+            kwargs["response_format"] = {"type": "json_object"}
 
         logger.debug("llm.chat: model=%s messages=%d tools=%d", model, len(messages), len(tools or []))
         resp = await litellm.acompletion(**kwargs)
@@ -48,6 +52,7 @@ class LiteLLMGateway:
         return LLMResponse(
             content=msg.content,
             tool_calls=tool_calls,
+            parsed=parse_structured(msg.content, schema) if schema is not None else None,
             usage=Usage(
                 prompt_tokens=usage.get("prompt_tokens", 0),
                 completion_tokens=usage.get("completion_tokens", 0),

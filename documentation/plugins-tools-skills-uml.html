@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ouroboros | Plugins · Tools · Skills UML</title>
+  <title>Mainspring | Plugins · Tools · Skills UML</title>
   <script type="module">
     import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
     mermaid.initialize({
@@ -164,7 +164,7 @@
   <div class="page">
     <header>
       <div>
-        <p class="eyebrow">Ouroboros / Architecture Note</p>
+        <p class="eyebrow">Mainspring / Architecture Note</p>
         <h1>Plugins <span>·</span> Tools <span>·</span> Skills</h1>
         <p class="lede">当前实现中插件协议、工具适配、技能构建与 Graph 执行之间的结构和调用关系。</p>
       </div>
@@ -329,20 +329,20 @@
         <table>
           <thead><tr><th>UML 元素</th><th>代码位置</th></tr></thead>
           <tbody>
-            <tr><td><code>Plugin</code>, <code>PluginManifest</code>, <code>InvokeContext</code>, <code>ToolAsPlugin</code></td><td><code>ouroboros/plugins/base.py</code></td></tr>
-            <tr><td><code>PluginRegistry</code></td><td><code>ouroboros/plugins/registry.py</code></td></tr>
-            <tr><td><code>Tool</code>, <code>BaseTool</code>, <code>ToolResult</code></td><td><code>ouroboros/tools/base.py</code></td></tr>
-            <tr><td>Built-in tools</td><td><code>ouroboros/tools/builtin/</code></td></tr>
-            <tr><td><code>Skill</code>, <code>build_skill</code></td><td><code>ouroboros/skills/base.py</code></td></tr>
-            <tr><td><code>PromptSkill</code>, <code>FunctionSkill</code>, <code>FlowSkill</code>, <code>AgentSkill</code></td><td><code>ouroboros/skills/</code></td></tr>
-            <tr><td><code>SkillManager</code></td><td><code>ouroboros/skills/manager.py</code></td></tr>
-            <tr><td>Runtime execution</td><td><code>ouroboros/core/runtime.py</code> and <code>ouroboros/core/nodes/</code></td></tr>
+            <tr><td><code>Plugin</code>, <code>PluginManifest</code>, <code>InvokeContext</code>, <code>ToolAsPlugin</code></td><td><code>mainspring/plugins/base.py</code></td></tr>
+            <tr><td><code>PluginRegistry</code></td><td><code>mainspring/plugins/registry.py</code></td></tr>
+            <tr><td><code>Tool</code>, <code>BaseTool</code>, <code>ToolResult</code></td><td><code>mainspring/tools/base.py</code></td></tr>
+            <tr><td>Built-in tools</td><td><code>mainspring/tools/builtin/</code></td></tr>
+            <tr><td><code>Skill</code>, <code>build_skill</code></td><td><code>mainspring/skills/base.py</code></td></tr>
+            <tr><td><code>PromptSkill</code>, <code>FunctionSkill</code>, <code>FlowSkill</code>, <code>AgentSkill</code></td><td><code>mainspring/skills/</code></td></tr>
+            <tr><td><code>SkillManager</code></td><td><code>mainspring/skills/manager.py</code></td></tr>
+            <tr><td>Runtime execution</td><td><code>mainspring/core/runtime.py</code> and <code>mainspring/core/nodes/</code></td></tr>
           </tbody>
         </table>
       </section>
     </main>
 
-    <footer>Ouroboros architecture documentation · generated from the current plugins, tools and skills implementation</footer>
+    <footer>Mainspring architecture documentation · generated from the current plugins, tools and skills implementation</footer>
   </div>
 </body>
 </html>

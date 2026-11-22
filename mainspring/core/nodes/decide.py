@@ -2,9 +2,9 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 
-from ouroboros.core.state import FINISH, AgentState
-from ouroboros.ports import ChatChunk, LLMGateway, LLMResponse
-from ouroboros.llm.stream import accumulate_response
+from mainspring.core.state import FINISH, AgentState
+from mainspring.ports import ChatChunk, LLMGateway, LLMResponse
+from mainspring.llm.stream import accumulate_response
 
 logger = logging.getLogger(__name__)
 

@@ -2,20 +2,20 @@
 
 import logging
 
-import ouroboros.log as logmod
+import mainspring.log as logmod
 
 
 def _mock_getLogger(mock):
     real = logging.getLogger
 
     def fake(name=None):
-        return mock if name == "ouroboros" else real(name)
+        return mock if name == "mainspring" else real(name)
 
     return fake
 
 
 def _fresh_mock_logger():
-    mock = logging.getLogger("ouroboros._test_mock")
+    mock = logging.getLogger("mainspring._test_mock")
     mock.handlers = []
     mock.propagate = True
     mock.setLevel(logging.NOTSET)

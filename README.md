@@ -1,6 +1,6 @@
-# Ouroboros
+# Mainspring
 
-框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/ouroboros/`](../../documentation/ouroboros/)。
+框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/mainspring/`](../../documentation/mainspring/)。
 
 业务无关的 **Agent 框架层**。提供 Agent 运行循环（Plan → Decide → Execute → Observe）、统一插件协议、Skill/Tool 执行、记忆机制与能力端口（Ports）。
 
@@ -15,6 +15,9 @@
 |------|------|
 | Agent 运行循环 | 手写状态机：`Decide → Execute → Observe`（Plan 可选开启），带迭代上限防死循环 |
 | 流式输出 | `StreamingLLMGateway` + `message.delta` token 级事件；不支持时自动回退非流式 |
+| 结构化输出 | `chat(schema=PydanticModel)`：`LLMResponse.parsed` 直出模型实例，校验失败抛 `StructuredOutputError` |
+| `@tool` 装饰器 | 类型化函数直出 `BaseTool`：签名自动生成参数 JSON Schema，docstring 即描述 |
+| Checkpointer 后端 | `checkpoint/`：SQLite / Redis / PostgreSQL 官方实现，与 `InMemoryCheckpointer` 行为互换；损坏/版本不符响亮失败 |
 | 上下文治理 | `ContextManager` 端口 + 默认滑窗（`SlidingWindowContext`），长任务不爆窗口 |
 | 统一插件协议 | `Plugin` / `PluginManifest`，Tool / Skill / Knowledge… 统一接入 |
 | 工具执行 | 内置 `calculator`/`http`，支持 MCP 客户端、HTTP(OpenAPI) 适配 |
@@ -28,12 +31,12 @@
 ## 安装
 
 ```bash
-pip install ouroboros        # 发布后
+pip install mainspring        # 发布后
 
 # monorepo 内以 path 依赖（开发态）
 # 宿主工程的 pyproject.toml：
 #   [tool.poetry.dependencies]
-#   ouroboros = { path = "ouroboros", develop = true }
+#   mainspring = { path = "mainspring", develop = true }
 ```
 
 依赖：`python>=3.11`、`litellm`、`pydantic`、`httpx`、`redis`。
@@ -43,16 +46,17 @@ pip install ouroboros        # 发布后
 ## 目录结构
 
 ```
-ouroboros/
+mainspring/
 ├── ports.py          # 能力端口 + 权限/记忆数据类型（框架与宿主的契约）
-├── log.py            # `ouroboros` 命名空间日志（NullHandler，不自行配置）
+├── log.py            # `mainspring` 命名空间日志（NullHandler，不自行配置）
 ├── context.py        # SlidingWindowContext（ContextManager 默认实现）
 ├── core/
 │   ├── runtime.py     # AgentRuntime 门面（run/resume + 强类型）
 │   ├── state.py       # AgentState（循环内共享状态）
 │   ├── resilience.py  # RetryPolicy / CircuitBreaker
-│   ├── checkpointer.py# InMemoryCheckpointer（默认实现）
+│   ├── checkpointer.py# InMemoryCheckpointer（测试/进程内默认）
 │   └── nodes/         # plan（可选）/ decide / execute / observe
+├── checkpoint/       # Checkpointer 官方后端（SQLite/Redis/PostgreSQL）+ JSON 信封
 ├── plugins/          # Plugin 协议 + PluginRegistry + ref 解析
 ├── skills/           # prompt/function/flow/agent 四类 Skill
 ├── tools/            # builtin / MCP / HTTP(OpenAPI) 工具
@@ -72,10 +76,10 @@ ouroboros/
 ```python
 import asyncio
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.llm.litellm_gateway import LiteLLMGateway
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.tools.registry import build_default_registry
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.llm.litellm_gateway import LiteLLMGateway
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.tools.registry import build_default_registry
 
 
 async def main():
@@ -99,7 +103,7 @@ async def main():
 asyncio.run(main())
 ```
 
-`RuntimeDeps` 只要求 `llm`；其余端口（`permission_checker` / `long_term_memory` / `knowledge` / `event_sink` / `checkpointer` / `tracer` / `metrics` …）按需注入，全部契约集中在 `ouroboros.ports`。
+`RuntimeDeps` 只要求 `llm`；其余端口（`permission_checker` / `long_term_memory` / `knowledge` / `event_sink` / `checkpointer` / `tracer` / `metrics` …）按需注入，全部契约集中在 `mainspring.ports`。
 
 ---
 
@@ -139,7 +143,7 @@ Plan 默认关闭的原因：它每次 run 多花一次 LLM 调用，而计划�
 ### PermissionChecker
 
 ```python
-from ouroboros.ports import PermissionChecker, PermissionContext, PermissionDecision, check_permission
+from mainspring.ports import PermissionChecker, PermissionContext, PermissionDecision, check_permission
 
 class MyPermissionChecker(PermissionChecker):
     def check(self, ctx, action, resource_type, resource_id,
@@ -156,7 +160,7 @@ class MyPermissionChecker(PermissionChecker):
 ### LongTermMemory / WorkingMemory
 
 ```python
-from ouroboros.ports import LongTermMemory, MemoryEntry
+from mainspring.ports import LongTermMemory, MemoryEntry
 
 class InMemoryLongTerm(LongTermMemory):
     async def add(self, db, *, tenant_id, user_id, session_id, content,
@@ -164,12 +168,12 @@ class InMemoryLongTerm(LongTermMemory):
     async def recall(self, db, tenant_id, user_id, query, top_k=5) -> list[MemoryEntry]: ...
 ```
 
-> `db` 参数由宿主传入（如 `AsyncSession`），协议不约束其类型。框架自带的 Redis 实现见 `ouroboros.memory.working.WorkingBrain`。
+> `db` 参数由宿主传入（如 `AsyncSession`），协议不约束其类型。框架自带的 Redis 实现见 `mainspring.memory.working.WorkingBrain`。
 
 ### Embedder
 
 ```python
-from ouroboros.llm.embedder import LiteLLMEmbedder, HashEmbedder
+from mainspring.llm.embedder import LiteLLMEmbedder, HashEmbedder
 
 embedder = LiteLLMEmbedder("text-embedding-3-small", api_key="sk-...")  # 有 key
 embedder = HashEmbedder(1536)                                          # 离线回退（确定性 hash）
@@ -180,7 +184,7 @@ embedder = HashEmbedder(1536)                                          # 离线�
 ## 开发自定义 Tool
 
 ```python
-from ouroboros.tools.base import BaseTool, ToolResult
+from mainspring.tools.base import BaseTool, ToolResult
 
 class WeatherTool(BaseTool):
     name = "weather"
@@ -206,12 +210,12 @@ registry.register_tool(WeatherTool())   # 内部用 ToolAsPlugin 适配成 Plugi
 Skill 是 `kind="skill"` 的插件，四种形态，用 `PluginManifest` 声明能力：
 
 ```python
-from ouroboros.plugins.base import PluginManifest
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.skills.prompt_skill import PromptSkill
-from ouroboros.skills.function_skill import FunctionSkill
-from ouroboros.skills.agent_skill import AgentSkill
-from ouroboros.skills.flow_skill import FlowSkill
+from mainspring.plugins.base import PluginManifest
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.skills.prompt_skill import PromptSkill
+from mainspring.skills.function_skill import FunctionSkill
+from mainspring.skills.agent_skill import AgentSkill
+from mainspring.skills.flow_skill import FlowSkill
 
 registry = PluginRegistry()
 
@@ -245,7 +249,7 @@ registry.register(FlowSkill(             # flow：多步流程（注入 run_flow
 ## 插件引用与命名
 
 ```python
-from ouroboros.plugins.manifest import parse_ref, format_ref
+from mainspring.plugins.manifest import parse_ref, format_ref
 
 parse_ref("tool:calculator")        # PluginRef(kind="tool", name="calculator")
 parse_ref("skill:refund@1.2.0")     # PluginRef(kind="skill", name="refund", version="1.2.0")
@@ -288,7 +292,7 @@ deps = RuntimeDeps(llm=LiteLLMGateway(...), event_sink=sink)
 长任务的对话历史会无限增长。`ContextManager` 端口（`ports.py`）在每个 Decide 前压缩历史，**被丢弃的轮次永久移除**（这正是控制窗口的机制）：
 
 ```python
-from ouroboros import SlidingWindowContext
+from mainspring import SlidingWindowContext
 
 # 零配置：超过 40 条即滑窗压缩 + 截断超长工具结果
 deps = RuntimeDeps(llm=llm)
@@ -305,9 +309,9 @@ deps = RuntimeDeps(llm=llm, context_manager=MySummarizingContext(llm, max_tokens
 ## 记忆编排
 
 ```python
-from ouroboros.memory.manager import MemoryManager
-from ouroboros.memory.consolidator import Consolidator
-from ouroboros.memory.working import WorkingBrain
+from mainspring.memory.manager import MemoryManager
+from mainspring.memory.consolidator import Consolidator
+from mainspring.memory.working import WorkingBrain
 
 manager = MemoryManager(
     working=WorkingBrain(redis_client),
@@ -363,7 +367,7 @@ resumed = await runtime.resume(definition, "run-1", ["delete_account"], deps)
 ## 运行测试
 
 ```bash
-cd ouroboros
+cd mainspring
 poetry install
 poetry run pytest            # 168 个单元测试，无外部依赖（Redis/LLM/DB 均用 fake）
 ```
@@ -372,18 +376,18 @@ poetry run pytest            # 168 个单元测试，无外部依赖（Redis/LLM
 
 ## 日志
 
-框架用标准库 `logging` 在 `ouroboros` 命名空间下输出日志（`ouroboros.core.runtime`、`ouroboros.core.nodes.execute` …），**从不自行配置 handler/level**——是否开启由宿主决定。
+框架用标准库 `logging` 在 `mainspring` 命名空间下输出日志（`mainspring.core.runtime`、`mainspring.core.nodes.execute` …），**从不自行配置 handler/level**——是否开启由宿主决定。
 
 宿主开启：
 
 ```python
 import logging
-from ouroboros.log import configure_logging
+from mainspring.log import configure_logging
 
 configure_logging(level=logging.INFO)   # 或 logging.DEBUG 看更细
 ```
 
-也可直接用宿主自己的 logging 配置（`ouroboros` 已挂 `NullHandler`，不会产生 "no handler" 噪音，且会传播到根 logger）。
+也可直接用宿主自己的 logging 配置（`mainspring` 已挂 `NullHandler`，不会产生 "no handler" 噪音，且会传播到根 logger）。
 
 级别约定：
 

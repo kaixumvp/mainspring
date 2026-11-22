@@ -9,10 +9,10 @@
 
 import asyncio
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import InvokeContext
-from ouroboros.skills.manager import SkillManager
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import InvokeContext
+from mainspring.skills.manager import SkillManager
 
 from _shared import ScriptedLLM, finish, tool_call
 

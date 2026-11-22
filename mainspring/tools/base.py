@@ -24,5 +24,5 @@ class BaseTool(ABC):
 
 
 # Backward-compatible alias: ``Tool`` was a structural Protocol before being folded into
-# ``BaseTool``. Hosts importing ``ouroboros.tools.Tool`` still resolve it.
+# ``BaseTool``. Hosts importing ``mainspring.tools.Tool`` still resolve it.
 Tool = BaseTool

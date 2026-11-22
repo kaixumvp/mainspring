@@ -1,13 +1,13 @@
 """Plugin protocol and adapter.
 
 The protocol + manifest + invoke context are the framework↔host contract and now live in
-``ouroboros.ports`` (V0.3). This module keeps the concrete ``ToolAsPlugin`` adapter and
+``mainspring.ports`` (V0.3). This module keeps the concrete ``ToolAsPlugin`` adapter and
 re-exports the contract names for backward compatibility.
 """
 
 from typing import Any
 
-from ouroboros.ports import InvokeContext, Plugin, PluginManifest
+from mainspring.ports import InvokeContext, Plugin, PluginManifest
 
 __all__ = ["Plugin", "PluginManifest", "InvokeContext", "ToolAsPlugin"]
 

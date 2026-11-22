@@ -1,7 +1,7 @@
 """OpenTelemetry tracing (V0.4) — optional dependency, no-op fallback.
 
 The framework depends only on ``opentelemetry-api`` and treats it as optional: when it is not
-installed, ``Tracer`` degrades to no-ops, so ``pip install ouroboros`` still works offline.
+installed, ``Tracer`` degrades to no-ops, so ``pip install mainspring`` still works offline.
 The host injects a ``Tracer`` (or accepts the module default) via ``RuntimeDeps.tracer``.
 """
 
@@ -24,7 +24,7 @@ except ImportError:  # pragma: no cover
 class Tracer:
     """Thin wrapper around an OTel tracer; every method is a no-op without OTel installed."""
 
-    def __init__(self, name: str = "ouroboros", enabled: bool = True) -> None:
+    def __init__(self, name: str = "mainspring", enabled: bool = True) -> None:
         self._name = name
         self._enabled = bool(enabled and _HAS_OTEL)
         self._tracer = _otel_trace.get_tracer(name) if self._enabled else None
@@ -61,7 +61,7 @@ class Tracer:
 default_tracer = Tracer()
 
 
-def get_tracer(name: str = "ouroboros") -> Tracer:
+def get_tracer(name: str = "mainspring") -> Tracer:
     return Tracer(name)
 
 

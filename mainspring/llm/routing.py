@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import logging
 
-from ouroboros.ports import ChatChunk, LLMGateway, LLMResponse, Usage
+from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, Usage
+from mainspring.llm.structured import schema_kw
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +30,11 @@ class FallbackLLMGateway:
         self._gateways = gateways
         self.last_used: str | None = None
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         last_exc: Exception | None = None
         for gateway in self._gateways:
             try:
-                resp = await gateway.chat(messages, model=model, tools=tools)
+                resp = await gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
                 self.last_used = getattr(gateway, "_model", None) or type(gateway).__name__
                 return resp
             except Exception as exc:  # noqa: BLE001 — failover on any vendor error
@@ -69,6 +70,9 @@ class FallbackLLMGateway:
 class FaultTolerantGateway:
     """Catch gateway errors / malformed tool-calls and return a valid empty response.
 
+    A ``StructuredOutputError`` (schema validation failure) degrades the same way: the
+    caller gets ``on_error`` content and ``parsed=None`` instead of an exception.
+
     Streaming: an error *before* the first chunk degrades to a single chunk carrying
     ``on_error``; a mid-stream error is re-raised (the connection is already broken).
     """
@@ -77,9 +81,9 @@ class FaultTolerantGateway:
         self._gateway = gateway
         self._on_error = on_error
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         try:
-            resp = await self._gateway.chat(messages, model=model, tools=tools)
+            resp = await self._gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
         except Exception as exc:  # noqa: BLE001 — structured-output fallback
             logger.warning("gateway error, falling back to empty response: %s", exc)
             return LLMResponse(content=self._on_error, usage=Usage())

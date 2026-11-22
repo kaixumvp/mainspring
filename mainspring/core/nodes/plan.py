@@ -1,8 +1,8 @@
 import json
 import logging
 
-from ouroboros.core.state import AgentState, PlanStep
-from ouroboros.ports import LLMGateway
+from mainspring.core.state import AgentState, PlanStep
+from mainspring.ports import LLMGateway
 
 logger = logging.getLogger(__name__)
 

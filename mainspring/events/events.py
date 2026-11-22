@@ -1,7 +1,7 @@
 """Runtime event model (V0.3).
 
 The framework only *produces* ``RuntimeEvent`` objects; transport (SSE, WebSocket, …) is
-the host's responsibility. An ``EventSink`` port (``ouroboros.ports.EventSink``) receives
+the host's responsibility. An ``EventSink`` port (``mainspring.ports.EventSink``) receives
 these objects via ``RuntimeDeps.event_sink``.
 """
 

@@ -1,13 +1,53 @@
 # Changelog
 
-本文件按 [SemVer](https://semver.org/) 记录 Ouroboros 的变更。v1.0 起：破坏性变更只出现在 major，弃用至少跨一个 minor。
+本文件按 [SemVer](https://semver.org/) 记录 Mainspring 的变更。v1.0 起：破坏性变更只出现在 major，弃用至少跨一个 minor。
+
+## [3.3.0] - 2026-11-22
+
+### 新增
+- **Checkpointer 官方实现**（`mainspring/checkpoint/`）：`Checkpointer` 端口（save/load/delete + list_runs）的三个零配置持久化后端，行为与 `InMemoryCheckpointer` 完全互换，宿主换后端不改 resume 语义：
+  - `SQLiteCheckpointer`：stdlib `sqlite3`，单文件单表，WAL + `busy_timeout=5000`；每次操作独立连接（checkpoint 低频路径，比连接池更简单安全），跨进程安全。`:memory:` 显式拒绝——每次操作开新连接会让它每次都是空库。
+  - `RedisCheckpointer`：注入 `redis.asyncio.Redis`（与 `WorkingBrain` 同一模式，框架不负责建连接）。键前缀 `cp:` 可配；TTL 默认关闭（过期即丢失快照与 resume 语义冲突，要开显式传 `ttl_seconds`）。
+  - `PostgresCheckpointer`：接受宿主提供的任意 DBAPI 2.0 连接（psycopg2/psycopg/…），`import mainspring` 永远不需要 PG 驱动。表在首次使用时懒建（`CREATE TABLE IF NOT EXISTS`，可共存于宿主已有的迁移表）。
+- **共享 JSON 编解码信封**（`checkpoint/codec.py`）：`{"schema_version": 1, "state": ...}`。版本不符或载荷损坏在 `load` 时抛 `ValueError`（响亮失败，绝不静默用错状态 resume）；`default=str` 兜底非常规 JSON 值（Datetime 等）。
+- 快照语义与 `InMemoryCheckpointer` 对齐：`load` 返回深拷贝（宿主改返回值不影响已存快照），save 覆盖旧快照，`list_runs` 全部排序稳定。
+
+## [3.2.0] - 2026-11-22
+
+### 新增
+- **`@tool` 装饰器**（`mainspring/tools/decorator.py`）：类型化函数直接成为 `BaseTool`。函数签名经 Pydantic 生成 OpenAI 风格参数 JSON Schema（无默认值的参数进 `required`、`Annotated[Field(description)]` 成为参数描述、`Literal` → `enum`），docstring 成为工具描述；每次调用先 `validate_call` 校验并强制类型（JSON 参数里的 `"5"` → `5`），校验失败或函数异常降级为 `ToolResult(success=False, error=...)`，不会打断运行循环。
+- 同步函数在 worker 线程执行（不阻塞事件循环），异步函数内联执行；返回 `dict`/`str`/`ToolResult` 均正确折叠进 `ToolResult`。
+- 用法：裸用 `@tool` 或 `@tool(name=..., description=..., permission=...)`；原函数经 `tool.fn` 可达。导出：`from mainspring.tools import tool, FunctionTool`；与 `ToolRegistry` / `ToolAsPlugin` 直接兼容。
+
+## [3.1.0] - 2026-11-22
+
+### 新增
+- **结构化输出**：`chat(messages, model, tools, schema=PydanticModel)`——请求 Pydantic 模型直出。`LLMResponse.parsed` 承载校验后的模型实例；`LiteLLMGateway` 向供应商下发 `response_format={"type": "json_object"}`（尽力而为的提示），框架侧以 `model_validate_json` 强制契约，失败抛 `StructuredOutputError`（`ports.py`）。`FaultTolerantGateway` 将其与其它网关错误同等降级为空响应（`parsed=None`）。
+- `schema` 在装饰器链全量透传：`Fallback` / `FaultTolerant` / `Recording` / `Replay` / `Caching` / `TieredRouter`。透传仅在 `schema` 非 None 时携带关键字，V3.0 时代自研网关不受影响；`CachingGateway` 缓存键纳入 `schema`。
+- 录制/重放保持确定性：录制只存原始响应（`parsed` 剥离，dump 为纯 JSON），`ReplayGateway` 按 `content` + `schema` 重推导 `parsed`。
+- `parse_structured`（`llm/structured.py`）：自研网关可复用同一校验契约。结构化输出暂只覆盖非流式 `chat()`（`chat_stream` 不含 `schema`）。
+
+## [3.0.0] - 2026-11-22
+
+### 变更（破坏性）
+- **全量改名 `ouroboros` → `mainspring`**：发行名与导入包名同步改（PyPI 上 `ouroboros` 已被生信包占用、`ouroboros-ai` 定位撞车；外部用户为零，选择一次到位而非分两步）。`pip install mainspring`，`import mainspring`。
+  受影响导入写法（逐一替换即可）：
+
+  | 旧 | 新 |
+  |---|---|
+  | `from ouroboros import AgentRuntime` | `from mainspring import AgentRuntime` |
+  | `from ouroboros.ports import LLMGateway` | `from mainspring.ports import LLMGateway` |
+  | `from ouroboros.core.runtime import AgentDefinition` | `from mainspring.core.runtime import AgentDefinition` |
+  | `from ouroboros.tools.registry import build_default_registry` | `from mainspring.tools.registry import build_default_registry` |
+
+  日志命名空间同步从 `ouroboros` 改为 `mainspring`（`logging.getLogger("mainspring")`）。
 
 ## [2.1.0] - 2026-11-21
 
 ### 新增
 - **流式输出**：`StreamingLLMGateway` 可选协议 + `ChatChunk` / `ToolCallDelta`（`ports.py`），`LiteLLMGateway.chat_stream` 归一化分块实现；Decide 节点边流式边发 `message.delta` 事件（token 级）。仅当注入 `event_sink` 且网关支持 `chat_stream` 时启用流式，其余情况自动回退 `chat()`，下游步骤与流式无关（`llm/stream.py` 折叠为同一 `LLMResponse`）。
 - 装饰器流式透传：`FallbackLLMGateway`（首块前才 failover，流中错误不再换厂商以免重复输出）、`FaultTolerantGateway`（首块前降级为 `on_error` 单块）、`RecordingGateway`（边转发边记录折叠响应）、`ReplayGateway`（录制响应合成为单块流，离线重放可跑流式消费方）。
-- **上下文治理**：`ContextManager` 端口（`ports.py`）+ 零依赖默认实现 `SlidingWindowContext`（`ouroboros/context.py`：保留头部 system 消息 + 最新窗口；切点跳过孤立 tool 消息；超长工具结果就地截断）。`RuntimeDeps.context_manager` 注入自定义策略，或 `RuntimeConfig.max_history_messages` 零配置启用；历史在被压缩后**永久丢弃**（这正是长任务不爆窗口的机制）。
+- **上下文治理**：`ContextManager` 端口（`ports.py`）+ 零依赖默认实现 `SlidingWindowContext`（`mainspring/context.py`：保留头部 system 消息 + 最新窗口；切点跳过孤立 tool 消息；超长工具结果就地截断）。`RuntimeDeps.context_manager` 注入自定义策略，或 `RuntimeConfig.max_history_messages` 零配置启用；历史在被压缩后**永久丢弃**（这正是长任务不爆窗口的机制）。
 - `RuntimeConfig.enable_planning`（见下方变更）与 `test_streaming.py` / `test_context_window.py` 测试组。
 
 ### 变更（行为，非 API）
@@ -53,7 +93,7 @@
 
 ### 新增
 - `py.typed` 标记，类型完备（PEP 561）。
-- 公共 API 面冻结：顶层 `ouroboros` 与各子包 `__all__` 显式导出。
+- 公共 API 面冻结：顶层 `mainspring` 与各子包 `__all__` 显式导出。
 - 兼容矩阵：Python 3.11 – 3.14。
 
 ## [0.4.0] - 2026-08-26

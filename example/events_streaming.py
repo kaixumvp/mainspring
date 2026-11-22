@@ -9,9 +9,9 @@
 import asyncio
 import json
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.tools.registry import build_default_registry
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.tools.registry import build_default_registry
 
 from _shared import ScriptedLLM, finish, tool_call
 

@@ -1,8 +1,8 @@
 import logging
 from typing import Any
 
-from ouroboros.plugins.base import InvokeContext, Plugin, ToolAsPlugin
-from ouroboros.plugins.manifest import format_ref
+from mainspring.plugins.base import InvokeContext, Plugin, ToolAsPlugin
+from mainspring.plugins.manifest import format_ref
 
 logger = logging.getLogger(__name__)
 

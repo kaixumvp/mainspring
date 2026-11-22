@@ -1,5 +1,5 @@
-from ouroboros.tools._http import http_request
-from ouroboros.tools.base import BaseTool, ToolResult
+from mainspring.tools._http import http_request
+from mainspring.tools.base import BaseTool, ToolResult
 
 
 class HttpTool(BaseTool):

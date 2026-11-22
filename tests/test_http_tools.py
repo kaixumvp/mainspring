@@ -3,9 +3,9 @@
 import httpx
 import pytest
 
-from ouroboros.tools.builtin.http import HttpTool
-from ouroboros.tools.http_openapi import HttpOpenApiTool
-from ouroboros.tools.mcp import McpClient, McpTool
+from mainspring.tools.builtin.http import HttpTool
+from mainspring.tools.http_openapi import HttpOpenApiTool
+from mainspring.tools.mcp import McpClient, McpTool
 
 
 class _FakeResponse:

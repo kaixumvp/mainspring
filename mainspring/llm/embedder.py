@@ -10,7 +10,7 @@ import re
 
 import litellm
 
-from ouroboros.ports import Embedder
+from mainspring.ports import Embedder
 
 __all__ = ["Embedder", "LiteLLMEmbedder", "HashEmbedder"]
 

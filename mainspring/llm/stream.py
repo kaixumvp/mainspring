@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 
-from ouroboros.ports import ChatChunk, LLMResponse, ToolCall, Usage
+from mainspring.ports import ChatChunk, LLMResponse, ToolCall, Usage
 
 
 def accumulate_response(chunks: list[ChatChunk]) -> LLMResponse:

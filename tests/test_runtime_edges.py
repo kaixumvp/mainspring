@@ -1,13 +1,13 @@
 import pytest
 
 from conftest import FakeKnowledge, FakeLongTermMemory, MockLLMGateway, build_default_plugins
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.core.checkpointer import InMemoryCheckpointer
-from ouroboros.core.nodes.execute import run_execute
-from ouroboros.core.resilience import CircuitBreaker, RetryPolicy
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import KnowledgeEntry, PluginManifest
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.core.checkpointer import InMemoryCheckpointer
+from mainspring.core.nodes.execute import run_execute
+from mainspring.core.resilience import CircuitBreaker, RetryPolicy
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import KnowledgeEntry, PluginManifest
 
 
 def _def(**overrides) -> AgentDefinition:

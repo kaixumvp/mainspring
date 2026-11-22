@@ -15,20 +15,25 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ouroboros.ports import ChatChunk, LLMResponse, Usage
-from ouroboros.llm.stream import accumulate_response
+from mainspring.ports import ChatChunk, LLMResponse, Usage
+from mainspring.llm.stream import accumulate_response
+from mainspring.llm.structured import parse_structured, schema_kw
 
 
 class RecordingGateway:
-    """Wraps a gateway and records every response, in call order."""
+    """Wraps a gateway and records every response, in call order.
+
+    Recordings store the raw response only: `parsed` is stripped (it is re-derivable from
+    `content` + `schema`), so dumps stay plain JSON independent of Pydantic internals.
+    """
 
     def __init__(self, gateway) -> None:
         self._gateway = gateway
         self.recorded: list[LLMResponse] = []
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
-        resp = await self._gateway.chat(messages, model=model, tools=tools)
-        self.recorded.append(resp)
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
+        resp = await self._gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
+        self.recorded.append(resp.model_copy(update={"parsed": None}))
         return resp
 
     def chat_stream(self, messages, model=None, tools=None):
@@ -52,11 +57,15 @@ class ReplayGateway:
         self._responses = list(responses)
         self.calls = 0
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         if not self._responses:
             raise RuntimeError("replay exhausted: no recorded response for this call")
         self.calls += 1
-        return self._responses.pop(0)
+        resp = self._responses.pop(0)
+        if schema is not None:
+            # Recordings are raw; re-derive the parsed instance to reproduce the live run.
+            resp = resp.model_copy(update={"parsed": parse_structured(resp.content, schema)})
+        return resp
 
     def chat_stream(self, messages, model=None, tools=None):
         return self._stream(messages, model, tools)
@@ -67,8 +76,9 @@ class ReplayGateway:
 
 
 def dump_recording(responses: list[LLMResponse], path) -> None:
+    """Persist responses as raw JSON; `parsed` is excluded (re-derivable via `schema`)."""
     Path(path).write_text(
-        json.dumps([r.model_dump() for r in responses], ensure_ascii=False, default=str),
+        json.dumps([r.model_dump(exclude={"parsed"}) for r in responses], ensure_ascii=False, default=str),
         encoding="utf-8",
     )
 

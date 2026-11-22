@@ -1,6 +1,6 @@
 import logging
 
-from ouroboros.tools.base import BaseTool
+from mainspring.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +32,8 @@ class ToolRegistry:
 
 
 def build_default_registry() -> ToolRegistry:
-    from ouroboros.tools.builtin.calculator import CalculatorTool
-    from ouroboros.tools.builtin.http import HttpTool
+    from mainspring.tools.builtin.calculator import CalculatorTool
+    from mainspring.tools.builtin.http import HttpTool
 
     registry = ToolRegistry()
     registry.register(CalculatorTool())

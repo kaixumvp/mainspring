@@ -7,8 +7,8 @@ similarity dedup. Each candidate is persisted best-effort so one failure does no
 
 import logging
 
-from ouroboros.memory.reflect import Reflector
-from ouroboros.ports import LongTermMemory
+from mainspring.memory.reflect import Reflector
+from mainspring.ports import LongTermMemory
 
 logger = logging.getLogger(__name__)
 

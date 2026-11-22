@@ -1,8 +1,8 @@
 # Plugins, Tools and Skills UML
 
-> 本文档统一归档于仓库根的 `documentation/ouroboros/`。
+> 本文档统一归档于仓库根的 `documentation/mainspring/`。
 
-本文档描述 Ouroboros 当前实现中 plugins、tools、skills 的核心结构和调用关系。
+本文档描述 Mainspring 当前实现中 plugins、tools、skills 的核心结构和调用关系。
 
 ## 1. 核心类图
 
@@ -211,14 +211,14 @@ flowchart TD
 
 | UML 元素 | 代码位置 |
 | --- | --- |
-| `Plugin`, `PluginManifest`, `InvokeContext`, `ToolAsPlugin` | `ouroboros/plugins/base.py` |
-| `PluginRegistry` | `ouroboros/plugins/registry.py` |
-| `Tool`, `BaseTool`, `ToolResult` | `ouroboros/tools/base.py` |
-| Built-in tools | `ouroboros/tools/builtin/` |
-| `Skill`, `build_skill` | `ouroboros/skills/base.py` |
-| `PromptSkill`, `FunctionSkill`, `FlowSkill`, `AgentSkill` | `ouroboros/skills/` |
-| `SkillManager` | `ouroboros/skills/manager.py` |
-| Runtime execution | `ouroboros/core/runtime.py` and `ouroboros/core/nodes/` |
+| `Plugin`, `PluginManifest`, `InvokeContext`, `ToolAsPlugin` | `mainspring/plugins/base.py` |
+| `PluginRegistry` | `mainspring/plugins/registry.py` |
+| `Tool`, `BaseTool`, `ToolResult` | `mainspring/tools/base.py` |
+| Built-in tools | `mainspring/tools/builtin/` |
+| `Skill`, `build_skill` | `mainspring/skills/base.py` |
+| `PromptSkill`, `FunctionSkill`, `FlowSkill`, `AgentSkill` | `mainspring/skills/` |
+| `SkillManager` | `mainspring/skills/manager.py` |
+| Runtime execution | `mainspring/core/runtime.py` and `mainspring/core/nodes/` |
 
 ## 5. 示例
 

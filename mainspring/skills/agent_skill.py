@@ -1,7 +1,7 @@
 import json
 
-from ouroboros.plugins.base import InvokeContext
-from ouroboros.skills.base import Skill
+from mainspring.plugins.base import InvokeContext
+from mainspring.skills.base import Skill
 
 
 class AgentSkill(Skill):

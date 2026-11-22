@@ -1,11 +1,11 @@
 import pytest
 
 from conftest import MockLLMGateway, build_default_plugin_registry
-from ouroboros.core.nodes.decide import run_decide
-from ouroboros.core.nodes.execute import run_execute
-from ouroboros.core.nodes.observe import run_observe
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.security import wrap_tool_result
+from mainspring.core.nodes.decide import run_decide
+from mainspring.core.nodes.execute import run_execute
+from mainspring.core.nodes.observe import run_observe
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.security import wrap_tool_result
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 import pytest
 
-from ouroboros.llm.base import LLMResponse, Usage
-from ouroboros.llm.cost import (
+from mainspring.llm.base import LLMResponse, Usage
+from mainspring.llm.cost import (
     CachingGateway,
     TieredRouter,
     TokenBudget,
@@ -51,8 +51,8 @@ def test_token_budget_consume_and_exhaust():
 @pytest.mark.asyncio
 async def test_runtime_aborts_on_token_budget():
     from conftest import MockLLMGateway, build_default_plugins
-    from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
-    from ouroboros.core.resilience import RetryPolicy
+    from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
+    from mainspring.core.resilience import RetryPolicy
 
     # the single Decide response consumes 15 tokens, exceeding the budget of 10
     llm = MockLLMGateway([

@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import os
 
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.llm.litellm_gateway import LiteLLMGateway
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.llm.litellm_gateway import LiteLLMGateway
 
 
 class ScriptedLLM:
@@ -42,12 +42,12 @@ def real_llm(default_model: str = "deepseek/deepseek-chat"):
     """从环境变量读取真实 LLM 配置；未设置 key 时抛错提示。
 
     环境变量：
-        OUROBOROS_MODEL / DEEPSEEK_API_KEY（或 OUROBOROS_API_KEY）
+        MAINSPRING_MODEL / DEEPSEEK_API_KEY（或 MAINSPRING_API_KEY）
     """
-    model = os.getenv("OUROBOROS_MODEL", default_model)
-    api_key = os.environ.get("OUROBOROS_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
+    model = os.getenv("MAINSPRING_MODEL", default_model)
+    api_key = os.environ.get("MAINSPRING_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "请设置环境变量 OUROBOROS_API_KEY（或 DEEPSEEK_API_KEY）后重试。"
+            "请设置环境变量 MAINSPRING_API_KEY（或 DEEPSEEK_API_KEY）后重试。"
         )
     return LiteLLMGateway(model=model, api_key=api_key), model

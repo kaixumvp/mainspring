@@ -1,4 +1,4 @@
-from ouroboros.evaluation.golden import (
+from mainspring.evaluation.golden import (
     Case,
     EvaluationResult,
     GoldenSet,

@@ -4,7 +4,7 @@ The framework depends ONLY on these protocols/types (plus its own modules); the 
 layer implements them. This keeps the framework free of any import of the host's storage,
 HTTP, or configuration.
 
-V0.3 consolidates *all* framework↔host contracts here so that ``import ouroboros.ports``
+V0.3 consolidates *all* framework↔host contracts here so that ``import mainspring.ports``
 is the single place to read the ABI. Concrete implementations (LiteLLM gateway/embedder,
 Redis working memory, …) stay in their own modules and re-export the protocol for
 backward compatibility.
@@ -37,16 +37,28 @@ class LLMResponse(BaseModel):
     content: str | None = None
     tool_calls: list[ToolCall] = Field(default_factory=list)
     usage: Usage = Field(default_factory=Usage)
+    parsed: Any | None = None
+    """Content validated against the requested `schema` (structured output), else None."""
+
+
+class StructuredOutputError(RuntimeError):
+    """LLM content failed to parse or validate against the requested `schema`."""
 
 
 class LLMGateway(Protocol):
-    """The LLM backend. A host may supply LiteLLM, a mock, or a multi-vendor router."""
+    """The LLM backend. A host may supply LiteLLM, a mock, or a multi-vendor router.
+
+    ``schema`` requests structured output: the gateway hints the provider via its native
+    ``response_format`` (best-effort) and guarantees the contract by validating the returned
+    content against the Pydantic model, exposing the instance as ``LLMResponse.parsed``.
+    """
 
     async def chat(
         self,
         messages: list[dict],
         model: str | None = None,
         tools: list[dict] | None = None,
+        schema: type[BaseModel] | None = None,
     ) -> LLMResponse: ...
 
 
@@ -328,7 +340,7 @@ class Knowledge(Protocol):
 
 # --------------------------------------------------------------------------- events
 class EventSink(Protocol):
-    """Sink for runtime events. The event is a ``ouroboros.events.events.RuntimeEvent``;
+    """Sink for runtime events. The event is a ``mainspring.events.events.RuntimeEvent``;
     typed as Any here to avoid a ports↔events import cycle."""
 
     async def __call__(self, event: Any) -> None: ...
@@ -369,7 +381,7 @@ class Checkpointer(Protocol):
     The framework checkpoints only right before each execute step; that snapshot lets
     ``resume`` re-run the exact blocked step after approvals are granted. Where the state
     dict is stored is the host's concern (Redis, Postgres, S3, …).
-    ``ouroboros.core.checkpointer.InMemoryCheckpointer`` is the zero-dependency default.
+    ``mainspring.core.checkpointer.InMemoryCheckpointer`` is the zero-dependency default.
     """
 
     async def save(self, run_id: str, state: dict) -> None: ...

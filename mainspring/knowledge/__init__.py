@@ -1,3 +1,3 @@
-from ouroboros.knowledge.plugin import KnowledgePlugin
+from mainspring.knowledge.plugin import KnowledgePlugin
 
 __all__ = ["KnowledgePlugin"]

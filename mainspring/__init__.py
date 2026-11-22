@@ -1,11 +1,11 @@
-"""Ouroboros — a business-agnostic agent runtime."""
+"""Mainspring — a business-agnostic agent runtime."""
 
 import logging
 
-__version__ = "2.1.0"
+__version__ = "3.3.0"
 
-from ouroboros.context import SlidingWindowContext  # noqa: E402
-from ouroboros.core.runtime import (  # noqa: E402
+from mainspring.context import SlidingWindowContext  # noqa: E402
+from mainspring.core.runtime import (  # noqa: E402
     AgentDefinition,
     AgentRuntime,
     RunContext,
@@ -29,4 +29,4 @@ __all__ = [
 
 # Library best practice: attach a NullHandler so an unconfigured host doesn't emit
 # "No handlers could be found" warnings from our loggers.
-logging.getLogger("ouroboros").addHandler(logging.NullHandler())
+logging.getLogger("mainspring").addHandler(logging.NullHandler())

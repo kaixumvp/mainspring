@@ -1,6 +1,6 @@
 """Metrics implementations (V0.4).
 
-The ``Metrics`` protocol lives in ``ouroboros.ports``; hosts implement it to push counters /
+The ``Metrics`` protocol lives in ``mainspring.ports``; hosts implement it to push counters /
 histograms to Prometheus. The framework ships two reference implementations: ``NoopMetrics``
 (default) and ``InMemoryMetrics`` (for tests / local introspection).
 """

@@ -1,7 +1,8 @@
 """Zero-dependency in-memory Checkpointer (V0.3).
 
-Used by tests and single-process deployments. Production hosts should implement the
-``ouroboros.ports.Checkpointer`` protocol over Redis/Postgres/etc. and pass it via
+Used by tests and single-process deployments. Durable deployments use the official
+implementations in ``mainspring.checkpoint`` (SQLite / Redis / PostgreSQL), or implement
+the ``mainspring.ports.Checkpointer`` protocol themselves and pass it via
 ``RuntimeDeps.checkpointer``.
 """
 
@@ -9,7 +10,7 @@ from __future__ import annotations
 
 import copy
 
-from ouroboros.ports import Checkpointer
+from mainspring.ports import Checkpointer
 
 
 class InMemoryCheckpointer:

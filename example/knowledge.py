@@ -9,9 +9,9 @@
 
 import asyncio
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.knowledge import KnowledgePlugin
-from ouroboros.ports import InvokeContext, KnowledgeEntry, LongTermMemory, MemoryEntry
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.knowledge import KnowledgePlugin
+from mainspring.ports import InvokeContext, KnowledgeEntry, LongTermMemory, MemoryEntry
 
 from _shared import ScriptedLLM, finish, tool_call
 

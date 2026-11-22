@@ -1,4 +1,4 @@
-from ouroboros.events import (
+from mainspring.events import (
     RuntimeEvent,
     run_approved,
     run_awaiting_human,
@@ -33,7 +33,7 @@ def test_step_completed():
 
 
 def test_step_completed_accepts_model():
-    from ouroboros.core.runtime import Step
+    from mainspring.core.runtime import Step
 
     e = step_completed(Step(seq=1, node="plan", run_id="r1"))
     assert e.data["node"] == "plan"

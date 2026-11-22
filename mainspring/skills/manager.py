@@ -1,8 +1,8 @@
 from typing import Any
 
-from ouroboros.plugins.base import PluginManifest
-from ouroboros.ports import FlowRunner, SubagentRunner
-from ouroboros.skills.base import Skill, build_skill
+from mainspring.plugins.base import PluginManifest
+from mainspring.ports import FlowRunner, SubagentRunner
+from mainspring.skills.base import Skill, build_skill
 
 
 class SkillManager:

@@ -6,8 +6,8 @@ and ``Knowledge`` ports directly; hosts use this facade to write session history
 consolidate it into long-term memory.
 """
 
-from ouroboros.memory.consolidator import Consolidator
-from ouroboros.ports import LongTermMemory, MemoryEntry, WorkingMemory
+from mainspring.memory.consolidator import Consolidator
+from mainspring.ports import LongTermMemory, MemoryEntry, WorkingMemory
 
 
 class MemoryManager:

@@ -3,20 +3,20 @@ import logging
 import sys
 from pathlib import Path
 
-# Let pytest import the ouroboros package without installing it.
+# Let pytest import the mainspring package without installing it.
 SRC = Path(__file__).resolve().parents[1]
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from ouroboros.llm.base import LLMResponse, Usage  # noqa: E402
-from ouroboros.plugins.registry import PluginRegistry  # noqa: E402
-from ouroboros.ports import ChatChunk, KnowledgeEntry, LongTermMemory, MemoryEntry, ToolCallDelta, WorkingMemory  # noqa: E402
-from ouroboros.tools.registry import build_default_registry  # noqa: E402
+from mainspring.llm.base import LLMResponse, Usage  # noqa: E402
+from mainspring.plugins.registry import PluginRegistry  # noqa: E402
+from mainspring.ports import ChatChunk, KnowledgeEntry, LongTermMemory, MemoryEntry, ToolCallDelta, WorkingMemory  # noqa: E402
+from mainspring.tools.registry import build_default_registry  # noqa: E402
 
 
 def pytest_configure(config):
     """Emit all framework logs; the displayed level is controlled by pytest's --log-cli-level."""
-    logger = logging.getLogger("ouroboros")
+    logger = logging.getLogger("mainspring")
     logger.setLevel(logging.DEBUG)
     logger.propagate = True
 

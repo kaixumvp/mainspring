@@ -18,14 +18,14 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ouroboros.context import SlidingWindowContext
-from ouroboros.core.nodes import decide as decide_mod
-from ouroboros.core.nodes import execute as execute_mod
-from ouroboros.core.nodes import observe as observe_mod
-from ouroboros.core.nodes import plan as plan_mod
-from ouroboros.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
-from ouroboros.core.state import FINISH
-from ouroboros.events.events import (
+from mainspring.context import SlidingWindowContext
+from mainspring.core.nodes import decide as decide_mod
+from mainspring.core.nodes import execute as execute_mod
+from mainspring.core.nodes import observe as observe_mod
+from mainspring.core.nodes import plan as plan_mod
+from mainspring.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
+from mainspring.core.state import FINISH
+from mainspring.events.events import (
     message_delta,
     run_approved,
     run_awaiting_human,
@@ -34,11 +34,11 @@ from ouroboros.events.events import (
     run_started,
     step_completed,
 )
-from ouroboros.llm.cost import TokenBudgetExceeded
-from ouroboros.observability.metrics import noop_metrics
-from ouroboros.observability.trace import default_tracer
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import (
+from mainspring.llm.cost import TokenBudgetExceeded
+from mainspring.observability.metrics import noop_metrics
+from mainspring.observability.trace import default_tracer
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import (
     Checkpointer,
     ContextManager,
     EventSink,
@@ -49,7 +49,7 @@ from ouroboros.ports import (
     PermissionChecker,
     PermissionContext,
 )
-from ouroboros.security import Redactor, default_redactor
+from mainspring.security import Redactor, default_redactor
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class RuntimeDeps:
     id_gen: Callable[[str], str] | None = None
     retry: RetryPolicy | None = None
     circuit_breaker: CircuitBreaker | None = None
-    tracer: Any = None  # ouroboros.observability.Tracer; None → module default
+    tracer: Any = None  # mainspring.observability.Tracer; None → module default
     metrics: Metrics | None = None  # None → no-op
     redactor: Redactor | None = None  # None → module default (built-in patterns)
 
@@ -151,7 +151,7 @@ class AgentRuntime:
         )
         registry = self._build_registry(definition)
         await self._emit(deps, run_started(run_id))
-        with tracer.start_span("ouroboros.run", attributes={"run_id": run_id, "agent_id": definition.agent_id}) as span:
+        with tracer.start_span("mainspring.run", attributes={"run_id": run_id, "agent_id": definition.agent_id}) as span:
             state["trace_id"] = tracer.current_trace_id() or self._gen_id(deps, "trace")
             try:
                 return await self._drive(state, definition, deps, registry, cfg)
@@ -344,7 +344,7 @@ class AgentRuntime:
     ) -> tuple[dict, int]:
         run_id = state.get("run_id")
         start = time.perf_counter()
-        with tracer.start_span(f"ouroboros.{node}", attributes={"node": node, "run_id": run_id}) as span:
+        with tracer.start_span(f"mainspring.{node}", attributes={"node": node, "run_id": run_id}) as span:
             try:
                 update = await run_with_retry(
                     lambda: self._call_node(
@@ -357,7 +357,7 @@ class AgentRuntime:
                 tracer.record_error(span, exc)
                 raise
         latency_ms = int((time.perf_counter() - start) * 1000)
-        metrics.observe("ouroboros.step.latency_ms", latency_ms, {"node": node})
+        metrics.observe("mainspring.step.latency_ms", latency_ms, {"node": node})
         return update, latency_ms
 
     async def _call_node(
@@ -494,14 +494,14 @@ class AgentRuntime:
             await deps.event_sink(event)
 
     def _record_run(self, metrics, status: str, state: dict, started_at: float, usage: dict) -> None:
-        metrics.incr("ouroboros.runs", labels={"status": status})
+        metrics.incr("mainspring.runs", labels={"status": status})
         metrics.observe(
-            "ouroboros.run.latency_ms", int((time.perf_counter() - started_at) * 1000), {"status": status}
+            "mainspring.run.latency_ms", int((time.perf_counter() - started_at) * 1000), {"status": status}
         )
-        metrics.incr("ouroboros.iterations", state.get("iteration", 0))
-        metrics.incr("ouroboros.tokens", usage.get("total_tokens", 0), {"kind": "total"})
-        metrics.incr("ouroboros.tokens", usage.get("prompt_tokens", 0), {"kind": "prompt"})
-        metrics.incr("ouroboros.tokens", usage.get("completion_tokens", 0), {"kind": "completion"})
+        metrics.incr("mainspring.iterations", state.get("iteration", 0))
+        metrics.incr("mainspring.tokens", usage.get("total_tokens", 0), {"kind": "total"})
+        metrics.incr("mainspring.tokens", usage.get("prompt_tokens", 0), {"kind": "prompt"})
+        metrics.incr("mainspring.tokens", usage.get("completion_tokens", 0), {"kind": "completion"})
 
     async def _checkpoint(self, deps: RuntimeDeps, run_id: str, state: dict) -> None:
         if deps.checkpointer is not None:

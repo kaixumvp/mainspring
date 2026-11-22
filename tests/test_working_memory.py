@@ -2,7 +2,7 @@
 
 import pytest
 
-from ouroboros.memory.working import WorkingBrain
+from mainspring.memory.working import WorkingBrain
 
 
 class FakeRedis:

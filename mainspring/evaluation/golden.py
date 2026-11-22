@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ouroboros.ports import JudgeVerdict
+from mainspring.ports import JudgeVerdict
 
 
 class Case(BaseModel):

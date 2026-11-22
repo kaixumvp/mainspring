@@ -1,6 +1,6 @@
 import pytest
 
-from ouroboros.core.resilience import (
+from mainspring.core.resilience import (
     CircuitBreaker,
     CircuitOpenError,
     RetryPolicy,

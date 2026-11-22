@@ -3,17 +3,17 @@
 import pytest
 
 from conftest import MockLLMGateway, build_default_plugin_registry
-from ouroboros.core.nodes.decide import run_decide
-from ouroboros.core.nodes.execute import _coerce_result, run_execute
-from ouroboros.core.nodes.observe import run_observe
-from ouroboros.core.nodes.plan import _parse_plan, run_plan
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.plugins.base import PluginManifest
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import PermissionContext, PermissionDecision
-from ouroboros.skills.prompt_skill import PromptSkill
-from ouroboros.security import wrap_tool_result
-from ouroboros.tools.base import ToolResult
+from mainspring.core.nodes.decide import run_decide
+from mainspring.core.nodes.execute import _coerce_result, run_execute
+from mainspring.core.nodes.observe import run_observe
+from mainspring.core.nodes.plan import _parse_plan, run_plan
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.plugins.base import PluginManifest
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import PermissionContext, PermissionDecision
+from mainspring.skills.prompt_skill import PromptSkill
+from mainspring.security import wrap_tool_result
+from mainspring.tools.base import ToolResult
 
 
 # --------------------------------------------------------------------------- _parse_plan

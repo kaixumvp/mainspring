@@ -9,11 +9,11 @@
 
 import asyncio
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.memory.consolidator import Consolidator
-from ouroboros.memory.manager import MemoryManager
-from ouroboros.memory.reflect import Reflector
-from ouroboros.ports import LongTermMemory, MemoryEntry, WorkingMemory
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.memory.consolidator import Consolidator
+from mainspring.memory.manager import MemoryManager
+from mainspring.memory.reflect import Reflector
+from mainspring.ports import LongTermMemory, MemoryEntry, WorkingMemory
 
 from _shared import ScriptedLLM, finish, tool_call
 

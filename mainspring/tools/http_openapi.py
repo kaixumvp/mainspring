@@ -9,8 +9,8 @@ template and HTTP config.
 import json
 from typing import Any
 
-from ouroboros.tools._http import http_request
-from ouroboros.tools.base import BaseTool, ToolResult
+from mainspring.tools._http import http_request
+from mainspring.tools.base import BaseTool, ToolResult
 
 
 def load_spec(raw: str) -> dict:

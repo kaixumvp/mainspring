@@ -2,8 +2,8 @@ import os
 
 import pytest
 
-from ouroboros.plugins.base import InvokeContext, PluginManifest
-from ouroboros.skills.function_skill import FunctionSkill
+from mainspring.plugins.base import InvokeContext, PluginManifest
+from mainspring.skills.function_skill import FunctionSkill
 
 
 @pytest.mark.asyncio

@@ -8,10 +8,10 @@ LLMGateway / PermissionChecker / LongTermMemory / Knowledge / EventSink / Checkp
 
 import asyncio
 
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.core.checkpointer import InMemoryCheckpointer
-from ouroboros.plugins.registry import PluginRegistry
-from ouroboros.ports import (
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.core.checkpointer import InMemoryCheckpointer
+from mainspring.plugins.registry import PluginRegistry
+from mainspring.ports import (
     InvokeContext,
     KnowledgeEntry,
     LongTermMemory,
@@ -20,8 +20,8 @@ from ouroboros.ports import (
     PermissionDecision,
     check_permission,
 )
-from ouroboros.skills.manager import SkillManager
-from ouroboros.tools.registry import build_default_registry
+from mainspring.skills.manager import SkillManager
+from mainspring.tools.registry import build_default_registry
 
 from _shared import ScriptedLLM, finish, tool_call
 

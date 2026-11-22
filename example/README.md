@@ -1,11 +1,11 @@
-# Ouroboros 示例
+# Mainspring 示例
 
 每个文件对应一个模块/能力，展示「如何单独使用」以及「如何经 `RuntimeDeps` 配合 Agent 运行」。所有示例默认**离线运行**（用 `_shared.ScriptedLLM` 脚本化 Mock，无需真实 API key）。
 
 ## 运行方式
 
 ```bash
-# 先安装（poetry 环境下 ouroboros 已可导入）
+# 先安装（poetry 环境下 mainspring 已可导入）
 poetry install
 poetry run python example/first_example.py
 
@@ -16,8 +16,8 @@ PYTHONPATH=src python example/first_example.py
 要接真实模型，设置环境变量后改用 `_shared.real_llm()`：
 
 ```bash
-export OUROBOROS_API_KEY=sk-...   # 或 DEEPSEEK_API_KEY
-export OUROBOROS_MODEL=deepseek/deepseek-chat
+export MAINSPRING_API_KEY=sk-...   # 或 DEEPSEEK_API_KEY
+export MAINSPRING_MODEL=deepseek/deepseek-chat
 ```
 
 ## 清单

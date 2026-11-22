@@ -1,7 +1,7 @@
 import pytest
 
-from ouroboros.llm.base import LLMResponse, Usage
-from ouroboros.llm.replay import ReplayGateway, RecordingGateway, dump_recording, load_recording
+from mainspring.llm.base import LLMResponse, Usage
+from mainspring.llm.replay import ReplayGateway, RecordingGateway, dump_recording, load_recording
 
 
 class Scripted:

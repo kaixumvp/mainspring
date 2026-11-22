@@ -6,7 +6,8 @@ import json
 from collections import OrderedDict
 from collections.abc import Callable
 
-from ouroboros.ports import LLMResponse
+from mainspring.ports import LLMResponse
+from mainspring.llm.structured import schema_kw
 
 
 class CachingGateway:
@@ -20,17 +21,17 @@ class CachingGateway:
         self.misses = 0
 
     @staticmethod
-    def _key(messages, model, tools) -> str:
-        return json.dumps({"model": model, "messages": messages, "tools": tools},
+    def _key(messages, model, tools, schema) -> str:
+        return json.dumps({"model": model, "messages": messages, "tools": tools, "schema": schema},
                           ensure_ascii=False, sort_keys=True, default=str)
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
-        key = self._key(messages, model, tools)
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
+        key = self._key(messages, model, tools, schema)
         if key in self._cache:
             self.hits += 1
             return self._cache[key].model_copy(deep=True)
         self.misses += 1
-        resp = await self._gateway.chat(messages, model=model, tools=tools)
+        resp = await self._gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
         self._cache[key] = resp
         if len(self._cache) > self._max_size:
             self._cache.popitem(last=False)
@@ -85,10 +86,10 @@ class TieredRouter:
         self._classifier = classifier
         self.last_model: str | None = None
 
-    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+    async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         chosen = model or (self._expensive if self._classifier(messages) else self._cheap)
         self.last_model = chosen
-        return await self._gateway.chat(messages, model=chosen, tools=tools)
+        return await self._gateway.chat(messages, model=chosen, tools=tools, **schema_kw(schema))
 
 
 __all__ = [

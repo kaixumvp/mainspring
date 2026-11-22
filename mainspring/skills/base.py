@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ouroboros.plugins.base import InvokeContext, PluginManifest
-from ouroboros.ports import FlowRunner, SubagentRunner
+from mainspring.plugins.base import InvokeContext, PluginManifest
+from mainspring.ports import FlowRunner, SubagentRunner
 
 
 class Skill(ABC):
@@ -47,10 +47,10 @@ def build_skill(
     run_flow: FlowRunner | None = None,
 ) -> Skill:
     """Instantiate the concrete skill class for a given form."""
-    from ouroboros.skills.agent_skill import AgentSkill
-    from ouroboros.skills.flow_skill import FlowSkill
-    from ouroboros.skills.function_skill import FunctionSkill
-    from ouroboros.skills.prompt_skill import PromptSkill
+    from mainspring.skills.agent_skill import AgentSkill
+    from mainspring.skills.flow_skill import FlowSkill
+    from mainspring.skills.function_skill import FunctionSkill
+    from mainspring.skills.prompt_skill import PromptSkill
 
     cls: dict[str, type[Skill]] = {
         "prompt": PromptSkill,

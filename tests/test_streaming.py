@@ -1,13 +1,13 @@
 import pytest
 
 from conftest import MockLLMGateway, MockStreamingGateway, build_default_plugins
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
-from ouroboros.core.resilience import RetryPolicy
-from ouroboros.llm.base import LLMResponse, ToolCall, Usage
-from ouroboros.llm.replay import RecordingGateway, ReplayGateway
-from ouroboros.llm.routing import FallbackLLMGateway, FaultTolerantGateway
-from ouroboros.llm.stream import accumulate_response
-from ouroboros.ports import ChatChunk, ToolCallDelta
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.core.resilience import RetryPolicy
+from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.llm.replay import RecordingGateway, ReplayGateway
+from mainspring.llm.routing import FallbackLLMGateway, FaultTolerantGateway
+from mainspring.llm.stream import accumulate_response
+from mainspring.ports import ChatChunk, ToolCallDelta
 
 
 def _definition(**overrides) -> AgentDefinition:

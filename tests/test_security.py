@@ -1,4 +1,4 @@
-from ouroboros.security import Redactor, TOOL_RESULT_GUARD, wrap_tool_result
+from mainspring.security import Redactor, TOOL_RESULT_GUARD, wrap_tool_result
 
 
 def test_redact_registered_secret():

@@ -9,7 +9,7 @@ import logging
 
 import httpx
 
-from ouroboros.tools.base import ToolResult
+from mainspring.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
 

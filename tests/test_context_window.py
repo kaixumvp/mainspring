@@ -1,10 +1,10 @@
 import pytest
 
 from conftest import MockLLMGateway, build_default_plugins
-from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
-from ouroboros.context import SlidingWindowContext
-from ouroboros.core.resilience import RetryPolicy
-from ouroboros.llm.base import LLMResponse, Usage
+from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
+from mainspring.context import SlidingWindowContext
+from mainspring.core.resilience import RetryPolicy
+from mainspring.llm.base import LLMResponse, Usage
 
 
 def _msg(role: str, content: str) -> dict:
