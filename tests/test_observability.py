@@ -42,7 +42,6 @@ async def test_runtime_records_metrics_and_redacts():
     from ouroboros.security import Redactor
 
     llm = MockLLMGateway([
-        LLMResponse(content='[{"description": "x"}]', usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)),
         LLMResponse(tool_calls=[ToolCall(id="c1", name="calculator", arguments={"expression": "3*8+100"})]),
         LLMResponse(content="3*8+100 = 124"),
     ])

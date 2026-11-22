@@ -14,7 +14,7 @@ from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.ports import InvokeContext
 from ouroboros.skills.manager import SkillManager
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 async def run_subagent(agent_ref: str, task: str, ctx) -> str:
@@ -88,7 +88,6 @@ async def main() -> None:
 
     # 2. 交给 Agent：LLM 选择 skill_make_brief
     llm = ScriptedLLM([
-        plan("生成季度复盘任务简报"),
         tool_call("skill_make_brief", {"topic": "季度复盘", "audience": "产品团队"}),
         finish("简报已生成。"),
     ])

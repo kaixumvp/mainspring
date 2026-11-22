@@ -2,8 +2,9 @@
 
 import logging
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
+from ouroboros.context import SlidingWindowContext  # noqa: E402
 from ouroboros.core.runtime import (  # noqa: E402
     AgentDefinition,
     AgentRuntime,
@@ -22,6 +23,7 @@ __all__ = [
     "RunResult",
     "RuntimeConfig",
     "RuntimeDeps",
+    "SlidingWindowContext",
     "Step",
 ]
 

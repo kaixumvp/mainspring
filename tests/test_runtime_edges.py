@@ -35,7 +35,6 @@ async def test_resume_unknown_run_raises():
 @pytest.mark.asyncio
 async def test_custom_id_generator():
     llm = MockLLMGateway([
-        LLMResponse(content='[{"description": "x"}]', usage=Usage()),
         LLMResponse(content="done", usage=Usage()),
     ])
     deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0), id_gen=lambda prefix: f"{prefix}_custom")
@@ -58,7 +57,6 @@ async def test_circuit_breaker_opens_and_fails_run():
             raise RuntimeError("boom")
 
     llm = MockLLMGateway([
-        LLMResponse(content='[{"description": "x"}]', usage=Usage()),
         LLMResponse(tool_calls=[ToolCall(id="c1", name="f", arguments={})], usage=Usage()),
     ])
     deps = RuntimeDeps(
@@ -100,7 +98,6 @@ async def test_execute_propagates_trace_id_to_invoke_context():
 @pytest.mark.asyncio
 async def test_recall_falls_back_to_knowledge_and_writes_back():
     llm = MockLLMGateway([
-        LLMResponse(content='[{"description": "x"}]', usage=Usage()),
         LLMResponse(content="退款政策：7天", usage=Usage()),
     ])
     long_term = FakeLongTermMemory()  # empty → recall insufficient

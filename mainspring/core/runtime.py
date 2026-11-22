@@ -18,6 +18,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ouroboros.context import SlidingWindowContext
 from ouroboros.core.nodes import decide as decide_mod
 from ouroboros.core.nodes import execute as execute_mod
 from ouroboros.core.nodes import observe as observe_mod
@@ -25,6 +26,7 @@ from ouroboros.core.nodes import plan as plan_mod
 from ouroboros.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
 from ouroboros.core.state import FINISH
 from ouroboros.events.events import (
+    message_delta,
     run_approved,
     run_awaiting_human,
     run_completed,
@@ -38,6 +40,7 @@ from ouroboros.observability.trace import default_tracer
 from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.ports import (
     Checkpointer,
+    ContextManager,
     EventSink,
     Knowledge,
     LLMGateway,
@@ -61,6 +64,8 @@ class RuntimeConfig(BaseModel):
     timeout_seconds: float = 120.0
     max_subagent_depth: int = 3
     max_total_tokens: int = 0  # 0 = unlimited token budget (V1.1)
+    enable_planning: bool = False  # v2.1: the Plan node costs an extra LLM call per run; opt in when tasks benefit
+    max_history_messages: int = 0  # 0 = unlimited; >0 compacts history before every Decide (v2.1)
 
 
 class Step(BaseModel):
@@ -111,6 +116,7 @@ class RuntimeDeps:
     knowledge: Knowledge | None = None
     event_sink: EventSink | None = None
     checkpointer: Checkpointer | None = None
+    context_manager: ContextManager | None = None  # v2.1: overrides max_history_messages when set
     db: Any = None  # transparent handle passed through to LongTermMemory/Knowledge ports
     id_gen: Callable[[str], str] | None = None
     retry: RetryPolicy | None = None
@@ -226,7 +232,7 @@ class AgentRuntime:
             "trace_id": None,
             "system_prompt": definition.system_prompt,
             "token_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-            _NEXT: "plan",
+            _NEXT: "plan" if cfg.enable_planning else "decide",
         }
         return state
 
@@ -257,6 +263,10 @@ class AgentRuntime:
                     node = state.get(_NEXT)
                     if node is None:
                         break
+                    if node == "decide":
+                        # Compact before the LLM sees the history; dropped turns are gone
+                        # for good (that is what keeps hundred-step runs inside the window).
+                        state["messages"] = self._compact_messages(state, deps, cfg)
                     seq += 1
                     update, latency_ms = await self._run_node(
                         node, state, model, system_prompt, tool_schemas, registry, deps, policy, tracer, metrics
@@ -365,7 +375,10 @@ class AgentRuntime:
         if node == "plan":
             return await plan_mod.run_plan(state, deps.llm, model)
         if node == "decide":
-            return await decide_mod.run_decide(state, deps.llm, model, tool_schemas, system_prompt)
+            emitter = self._delta_emitter(state, deps)
+            return await decide_mod.run_decide(
+                state, deps.llm, model, tool_schemas, system_prompt, on_delta=emitter
+            )
         if node == "execute":
             return await execute_mod.run_execute(
                 state, registry, deps.permission_checker, deps.permission_context,
@@ -432,6 +445,26 @@ class AgentRuntime:
                 except Exception:  # noqa: BLE001 — write-back is best-effort
                     pass
         return contexts
+
+    def _compact_messages(self, state: dict, deps: RuntimeDeps, cfg: RuntimeConfig) -> list[dict]:
+        messages = list(state.get("messages") or [])
+        if deps.context_manager is not None:
+            return deps.context_manager.fit(messages)
+        if cfg.max_history_messages:
+            return SlidingWindowContext(max_messages=cfg.max_history_messages).fit(messages)
+        return messages
+
+    def _delta_emitter(self, state: dict, deps: RuntimeDeps):
+        """Build the Decide-node streaming callback; None disables streaming entirely."""
+        if deps.event_sink is None:
+            return None
+        run_id = state.get("run_id")
+        seq = state.get("iteration", 0)
+
+        async def emit(delta: str) -> None:
+            await self._emit(deps, message_delta(run_id, seq, delta))
+
+        return emit
 
     def _merge_usage(self, usage: dict, update: dict) -> None:
         u = update.get("token_usage")

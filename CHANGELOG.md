@@ -2,6 +2,17 @@
 
 本文件按 [SemVer](https://semver.org/) 记录 Ouroboros 的变更。v1.0 起：破坏性变更只出现在 major，弃用至少跨一个 minor。
 
+## [2.1.0] - 2026-11-21
+
+### 新增
+- **流式输出**：`StreamingLLMGateway` 可选协议 + `ChatChunk` / `ToolCallDelta`（`ports.py`），`LiteLLMGateway.chat_stream` 归一化分块实现；Decide 节点边流式边发 `message.delta` 事件（token 级）。仅当注入 `event_sink` 且网关支持 `chat_stream` 时启用流式，其余情况自动回退 `chat()`，下游步骤与流式无关（`llm/stream.py` 折叠为同一 `LLMResponse`）。
+- 装饰器流式透传：`FallbackLLMGateway`（首块前才 failover，流中错误不再换厂商以免重复输出）、`FaultTolerantGateway`（首块前降级为 `on_error` 单块）、`RecordingGateway`（边转发边记录折叠响应）、`ReplayGateway`（录制响应合成为单块流，离线重放可跑流式消费方）。
+- **上下文治理**：`ContextManager` 端口（`ports.py`）+ 零依赖默认实现 `SlidingWindowContext`（`ouroboros/context.py`：保留头部 system 消息 + 最新窗口；切点跳过孤立 tool 消息；超长工具结果就地截断）。`RuntimeDeps.context_manager` 注入自定义策略，或 `RuntimeConfig.max_history_messages` 零配置启用；历史在被压缩后**永久丢弃**（这正是长任务不爆窗口的机制）。
+- `RuntimeConfig.enable_planning`（见下方变更）与 `test_streaming.py` / `test_context_window.py` 测试组。
+
+### 变更（行为，非 API）
+- **Plan 节点默认关闭**：`enable_planning=False`（此前每次 run 固定先花一次 LLM 调用生成计划，且 `PlanStep.status` 从未被跟踪）。默认路径为 `Decide → Execute → Observe` 循环，省一次 LLM 调用；需要旧行为的宿主显式传 `RuntimeConfig(enable_planning=True)`。记忆召回上下文（`memory_ctx`）改由 Decide 注入，plan 开关不影响召回链路。
+
 ## [2.0.0] - 2026-10-10
 
 ### 变更（破坏性）

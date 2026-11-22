@@ -65,6 +65,12 @@ def run_approved(run_id: str) -> RuntimeEvent:
     return RuntimeEvent(event="run.approved", run_id=run_id, data={"run_id": run_id, "status": "running"})
 
 
+def message_delta(run_id: str, seq: int, delta: str) -> RuntimeEvent:
+    """Token-level streaming event from the Decide node. Deltas are ephemeral: a retried
+    Decide re-streams from scratch, so consumers should render incrementally, not persist."""
+    return RuntimeEvent(event="message.delta", run_id=run_id, data={"seq": seq, "delta": delta})
+
+
 __all__ = [
     "RuntimeEvent",
     "run_started",
@@ -73,4 +79,5 @@ __all__ = [
     "run_failed",
     "run_awaiting_human",
     "run_approved",
+    "message_delta",
 ]

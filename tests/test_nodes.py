@@ -129,6 +129,16 @@ async def test_run_decide_injects_plan():
     assert any("Current plan" in c for c in contents)
 
 
+@pytest.mark.asyncio
+async def test_run_decide_injects_memory_context():
+    # recall must reach the LLM even with the (optional) Plan node disabled
+    llm = MockLLMGateway([LLMResponse(content="x", usage=Usage())])
+    state = {"plan": [], "messages": [], "memory_ctx": [{"content": "用户偏好深色主题"}]}
+    await run_decide(state, llm, "m", [], None)
+    contents = [m.get("content", "") for m in llm.calls[0]["messages"]]
+    assert any("Relevant past memories" in c and "用户偏好深色主题" in c for c in contents)
+
+
 # --------------------------------------------------------------------------- observe node
 @pytest.mark.asyncio
 async def test_run_observe_increments_iteration():

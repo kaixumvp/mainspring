@@ -23,7 +23,7 @@ from ouroboros.ports import (
 from ouroboros.skills.manager import SkillManager
 from ouroboros.tools.registry import build_default_registry
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 # ---- 各端口实现（宿主职责）----
@@ -88,7 +88,6 @@ async def main() -> None:
 
     # 一次性注入全部端口
     llm = ScriptedLLM([
-        plan("委派研究 Agent 分析反馈"),
         tool_call("skill_delegate", {"task": "分析用户反馈"}),
         finish("研究 Agent 已完成分析。"),
     ])

@@ -14,7 +14,7 @@ from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.ports import InvokeContext, PluginManifest
 from ouroboros.tools.base import BaseTool, ToolResult
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 class WeatherTool(BaseTool):
@@ -68,7 +68,6 @@ async def main() -> None:
 
     # 3. 交给 Agent：LLM 根据 schema 选择调用
     llm = ScriptedLLM([
-        plan("查询北京天气"),
         tool_call("weather", {"city": "北京"}),
         finish("北京今天晴，22℃"),
     ])

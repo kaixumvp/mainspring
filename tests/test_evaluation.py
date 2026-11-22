@@ -27,7 +27,6 @@ async def test_run_evaluation_single_case():
     from ouroboros.llm.base import LLMResponse, Usage
 
     llm = MockLLMGateway([
-        LLMResponse(content='[{"description": "answer"}]', usage=Usage()),
         LLMResponse(content="答案是 42", usage=Usage()),
     ])
     definition = AgentDefinition(model="m", system_prompt="s", plugins=build_default_plugins())

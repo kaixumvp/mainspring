@@ -28,14 +28,6 @@ class ScriptedLLM:
         return self._responses.pop(0)
 
 
-def plan(description: str) -> LLMResponse:
-    """计划节点的响应：一个单步计划。"""
-    return LLMResponse(
-        content=f'[{{"description": "{description}"}}]',
-        usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
-    )
-
-
 def tool_call(name: str, arguments: dict, tool_call_id: str = "call_1") -> LLMResponse:
     """decide 节点的响应：让 LLM 选择调用某个插件。"""
     return LLMResponse(tool_calls=[ToolCall(id=tool_call_id, name=name, arguments=arguments)])

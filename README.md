@@ -13,13 +13,15 @@
 
 | 能力 | 说明 |
 |------|------|
-| Agent 运行循环 | 手写状态机：`Plan → Decide → Execute → Observe`，带迭代上限防死循环 |
+| Agent 运行循环 | 手写状态机：`Decide → Execute → Observe`（Plan 可选开启），带迭代上限防死循环 |
+| 流式输出 | `StreamingLLMGateway` + `message.delta` token 级事件；不支持时自动回退非流式 |
+| 上下文治理 | `ContextManager` 端口 + 默认滑窗（`SlidingWindowContext`），长任务不爆窗口 |
 | 统一插件协议 | `Plugin` / `PluginManifest`，Tool / Skill / Knowledge… 统一接入 |
 | 工具执行 | 内置 `calculator`/`http`，支持 MCP 客户端、HTTP(OpenAPI) 适配 |
 | 技能执行 | 四种形态：`prompt` / `function` / `flow` / `agent` |
 | 记忆 | 短期 Working Brain（Redis）+ 会话固化 Consolidator + `LongTermMemory` 端口 |
 | 授权 | 纯逻辑 `check_permission`（admin 绕过 / deny 优先 / 默认拒绝 / 高危审批） |
-| 事件 | 运行时事件模型（非传输层） |
+| 事件 | 运行时事件模型（非传输层），含 token 级 `message.delta` |
 
 ---
 
@@ -44,12 +46,13 @@ pip install ouroboros        # 发布后
 ouroboros/
 ├── ports.py          # 能力端口 + 权限/记忆数据类型（框架与宿主的契约）
 ├── log.py            # `ouroboros` 命名空间日志（NullHandler，不自行配置）
+├── context.py        # SlidingWindowContext（ContextManager 默认实现）
 ├── core/
 │   ├── runtime.py     # AgentRuntime 门面（run/resume + 强类型）
 │   ├── state.py       # AgentState（循环内共享状态）
 │   ├── resilience.py  # RetryPolicy / CircuitBreaker
 │   ├── checkpointer.py# InMemoryCheckpointer（默认实现）
-│   └── nodes/         # plan / decide / execute / observe
+│   └── nodes/         # plan（可选）/ decide / execute / observe
 ├── plugins/          # Plugin 协议 + PluginRegistry + ref 解析
 ├── skills/           # prompt/function/flow/agent 四类 Skill
 ├── tools/            # builtin / MCP / HTTP(OpenAPI) 工具
@@ -111,19 +114,21 @@ asyncio.run(main())
 ### 运行循环
 
 ```
-plan ─► decide ─► execute ─► observe ─┐
-                            ▲         │ (未完成)
-                            └─ decide ◄┘
-                                      │ (action=="__finish__" 或 iteration 触顶)
-                                      ▼ END
+(plan ─►) decide ─► execute ─► observe ─┐
+                 ▲                      │ (未完成)
+                 └──────── decide ◄─────┘
+                                        │ (action=="__finish__" 或 iteration 触顶)
+                                        ▼ END
 ```
 
 | 节点 | 职责 |
 |------|------|
-| `plan` | 拆解任务为步骤清单（失败退化为单步） |
-| `decide` | 带工具 schema 调 LLM，选择插件或收尾给答案 |
+| `plan` | 拆解任务为步骤清单（**默认关闭**，`RuntimeConfig(enable_planning=True)` 开启；失败退化为单步） |
+| `decide` | 带工具 schema 调 LLM，选择插件或收尾给答案；流式时逐 token 发 `message.delta` |
 | `execute` | 权限校验后调用插件，归一化结果为字符串 |
 | `observe` | 回填结果、`iteration+1`、触顶兜底 |
+
+Plan 默认关闭的原因：它每次 run 多花一次 LLM 调用，而计划状态从未被跟踪；单循环决策已覆盖大多数任务（与 OpenAI Agents SDK 同一哲学）。
 
 ---
 
@@ -262,7 +267,38 @@ async def sink(event):
 deps = RuntimeDeps(llm=llm, event_sink=sink)
 ```
 
-事件类型：`run.started` / `step.completed` / `run.completed` / `run.failed` / `run.awaiting_human` / `run.approved` / `run.rejected`。框架只产出事件数据，传输由宿主负责。
+事件类型：`run.started` / `message.delta` / `step.completed` / `run.completed` / `run.failed` / `run.awaiting_human` / `run.approved` / `run.rejected`。框架只产出事件数据，传输由宿主负责。
+
+**流式（token 级）**：当网关实现 `StreamingLLMGateway`（如 `LiteLLMGateway`）且注入了 `event_sink` 时，Decide 自动走流式并逐 token 发出 `message.delta` 事件，宿主可直接转 SSE 打字机效果：
+
+```python
+async def sink(event):
+    if event.event == "message.delta":
+        print(event.data["delta"], end="", flush=True)
+
+deps = RuntimeDeps(llm=LiteLLMGateway(...), event_sink=sink)
+```
+
+注意两点：`message.delta` 是**临时性**事件——Decide 重试会从头重新流式，消费方应增量渲染而非持久化；只有折叠后的最终结果才是权威数据。未注入 `event_sink` 或网关不支持 `chat_stream` 时自动回退 `chat()`，零成本。
+
+---
+
+## 上下文治理
+
+长任务的对话历史会无限增长。`ContextManager` 端口（`ports.py`）在每个 Decide 前压缩历史，**被丢弃的轮次永久移除**（这正是控制窗口的机制）：
+
+```python
+from ouroboros import SlidingWindowContext
+
+# 零配置：超过 40 条即滑窗压缩 + 截断超长工具结果
+deps = RuntimeDeps(llm=llm)
+definition = AgentDefinition(model="...", runtime=RuntimeConfig(max_history_messages=40))
+
+# 自定义策略（如 LLM 摘要压缩）：实现 ContextManager 协议
+deps = RuntimeDeps(llm=llm, context_manager=MySummarizingContext(llm, max_tokens=8000))
+```
+
+默认实现 `SlidingWindowContext`：保留头部 system 消息 + 最新窗口、切点跳过孤立 tool 消息（避免 API 校验失败）、超长工具结果就地截断。宿主的摘要压缩实现可在构造时自带网关。
 
 ---
 
@@ -308,7 +344,10 @@ resumed = await runtime.resume(definition, "run-1", ["delete_account"], deps)
 | 符号 | 位置 | 签名 |
 |------|------|------|
 | `AgentRuntime` | `core.runtime` | `run(definition, task, context, deps) -> RunResult` / `resume(...)` |
-| `RuntimeDeps` | `core.runtime` | `llm / permission_checker / long_term_memory / knowledge / event_sink / checkpointer / tracer / metrics / retry …` |
+| `RuntimeDeps` | `core.runtime` | `llm / permission_checker / long_term_memory / knowledge / event_sink / checkpointer / context_manager / tracer / metrics / retry …` |
+| `RuntimeConfig` | `core.runtime` | `max_iterations / timeout_seconds / max_subagent_depth / max_total_tokens / enable_planning / max_history_messages` |
+| `SlidingWindowContext` | `context` | `ContextManager` 默认实现（滑窗 + 工具结果截断） |
+| `StreamingLLMGateway` / `ChatChunk` | `ports` / `llm.base` | 可选流式协议；`LiteLLMGateway.chat_stream` |
 | `PluginRegistry` | `plugins.registry` | `register / register_tool / get / to_openai_schema / invoke` |
 | `PluginManifest` | `plugins.base` | Pydantic 模型 + `function_name` |
 | `InvokeContext` | `plugins.base` | `tenant_id/user_id/run_id/trace_id/session_id/subagent_depth` |

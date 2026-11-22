@@ -13,7 +13,7 @@ from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.tools.registry import build_default_registry
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 def to_sse(event) -> str:
@@ -33,7 +33,6 @@ async def main() -> None:
         print(to_sse(event))
 
     llm = ScriptedLLM([
-        plan("计算 3*8+100"),
         tool_call("calculator", {"expression": "3*8+100"}),
         finish("3*8+100 = 124"),
     ])

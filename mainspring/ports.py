@@ -12,7 +12,7 @@ backward compatibility.
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import datetime
 from enum import Enum
 from typing import Any, Protocol
@@ -45,9 +45,55 @@ class LLMGateway(Protocol):
     async def chat(
         self,
         messages: list[dict],
-        model: str,
+        model: str | None = None,
         tools: list[dict] | None = None,
     ) -> LLMResponse: ...
+
+
+# --------------------------------------------------------------------------- streaming
+class ToolCallDelta(BaseModel):
+    """A fragment of one streamed tool call; `index` keys fragments across chunks."""
+
+    index: int = 0
+    id: str | None = None
+    name: str | None = None
+    arguments_delta: str = ""
+
+
+class ChatChunk(BaseModel):
+    """One normalized streaming chunk: content and/or tool-call deltas, final usage on the last chunk."""
+
+    content_delta: str = ""
+    tool_call_deltas: list[ToolCallDelta] = Field(default_factory=list)
+    usage: Usage | None = None
+
+
+class StreamingLLMGateway(Protocol):
+    """Optional streaming extension of ``LLMGateway``.
+
+    A gateway may implement both; the runtime streams only when ``chat_stream`` exists
+    *and* an ``EventSink`` is injected, and falls back to ``chat()`` otherwise.
+    """
+
+    def chat_stream(
+        self,
+        messages: list[dict],
+        model: str | None = None,
+        tools: list[dict] | None = None,
+    ) -> AsyncIterator[ChatChunk]: ...
+
+
+# --------------------------------------------------------------------------- context
+class ContextManager(Protocol):
+    """Compacts the conversation history before each Decide call (long-run context governance).
+
+    Implementations must be side-effect free and return a new list; the runtime replaces
+    ``state["messages"]`` with the result, so dropped turns are permanently forgotten (this
+    is what keeps hundred-step runs inside the model window). A summarizing implementation
+    may capture its own ``LLMGateway`` at construction time.
+    """
+
+    def fit(self, messages: list[dict]) -> list[dict]: ...
 
 
 # --------------------------------------------------------------------------- embedder

@@ -15,7 +15,7 @@ from ouroboros.evaluation import Case, GoldenSet, HeuristicJudge, run_evaluation
 from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.tools.registry import build_default_registry
 
-from _shared import ScriptedLLM, finish, plan
+from _shared import ScriptedLLM, finish
 
 
 async def main() -> None:
@@ -26,9 +26,7 @@ async def main() -> None:
 
     # 每条用例会跑 plan → decide(finish)，脚本化 LLM 按序给出各用例的回答
     llm = ScriptedLLM([
-        plan("回答 3*8+100"),
         finish("3*8+100 = 124"),
-        plan("回答 1+1"),
         finish("1+1 = 2"),
     ])
     deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0))

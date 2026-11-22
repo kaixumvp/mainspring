@@ -54,12 +54,9 @@ async def test_runtime_aborts_on_token_budget():
     from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
     from ouroboros.core.resilience import RetryPolicy
 
-    # plan alone consumes 15 tokens, exceeding the budget of 10
+    # the single Decide response consumes 15 tokens, exceeding the budget of 10
     llm = MockLLMGateway([
-        LLMResponse(
-            content='[{"description": "x"}]',
-            usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
-        ),
+        LLMResponse(content="done", usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)),
     ])
     definition = AgentDefinition(
         model="m", system_prompt="s", plugins=build_default_plugins(),

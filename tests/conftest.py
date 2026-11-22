@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 from pathlib import Path
@@ -9,7 +10,7 @@ if str(SRC) not in sys.path:
 
 from ouroboros.llm.base import LLMResponse, Usage  # noqa: E402
 from ouroboros.plugins.registry import PluginRegistry  # noqa: E402
-from ouroboros.ports import KnowledgeEntry, LongTermMemory, MemoryEntry, WorkingMemory  # noqa: E402
+from ouroboros.ports import ChatChunk, KnowledgeEntry, LongTermMemory, MemoryEntry, ToolCallDelta, WorkingMemory  # noqa: E402
 from ouroboros.tools.registry import build_default_registry  # noqa: E402
 
 
@@ -32,6 +33,40 @@ class MockLLMGateway:
         if self.responses:
             return self.responses.pop(0)
         return LLMResponse(content="", usage=Usage())
+
+
+class MockStreamingGateway:
+    """Mock LLM exposing both chat() and chat_stream(): each preset response is streamed
+    as split content chunks plus per-tool-call chunks, so tests can assert live deltas
+    and that the folded result matches the non-streaming path."""
+
+    def __init__(self, responses: list[LLMResponse] | None = None) -> None:
+        self.responses: list[LLMResponse] = list(responses or [])
+        self.calls: list[dict] = []
+
+    async def chat(self, messages, model=None, tools=None) -> LLMResponse:
+        self.calls.append({"messages": messages, "model": model, "tools": tools, "streamed": False})
+        if self.responses:
+            return self.responses.pop(0)
+        return LLMResponse(content="", usage=Usage())
+
+    def chat_stream(self, messages, model=None, tools=None):
+        self.calls.append({"messages": messages, "model": model, "tools": tools, "streamed": True})
+        return self._stream()
+
+    async def _stream(self):
+        resp = self.responses.pop(0) if self.responses else LLMResponse(content="", usage=Usage())
+        text = resp.content or ""
+        if text:
+            step = max(1, len(text) // 3)
+            for i in range(0, len(text), step):
+                yield ChatChunk(content_delta=text[i:i + step])
+        for i, tc in enumerate(resp.tool_calls):
+            yield ChatChunk(tool_call_deltas=[ToolCallDelta(
+                index=i, id=tc.id, name=tc.name,
+                arguments_delta=json.dumps(tc.arguments, ensure_ascii=False),
+            )])
+        yield ChatChunk(usage=resp.usage)
 
 
 class FakeWorkingMemory(WorkingMemory):

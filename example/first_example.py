@@ -10,7 +10,7 @@ from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.tools.registry import build_default_registry
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 async def main() -> None:
@@ -21,7 +21,6 @@ async def main() -> None:
 
     # 2. LLM 端口：离线用脚本化 Mock；接真实模型见 _shared.real_llm()
     llm = ScriptedLLM([
-        plan("计算 3*8 再加 100"),
         tool_call("calculator", {"expression": "3*8+100"}),
         finish("3*8+100 = 124"),
     ])

@@ -1,9 +1,10 @@
 import json
 import logging
+from collections.abc import AsyncIterator
 
 import litellm
 
-from ouroboros.ports import LLMResponse, ToolCall, Usage
+from ouroboros.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
 
 logger = logging.getLogger(__name__)
 
@@ -53,3 +54,58 @@ class LiteLLMGateway:
                 total_tokens=usage.get("total_tokens", 0),
             ),
         )
+
+    def chat_stream(self, messages, model=None, tools=None) -> AsyncIterator[ChatChunk]:
+        """Stream normalized chunks. Tries to include final usage; providers that reject
+        ``stream_options`` are retried once without it."""
+        return self._stream(messages, model or self._model, tools)
+
+    async def _stream(self, messages, model, tools):
+        kwargs: dict = {"model": model, "messages": messages, "stream": True}
+        if self._api_key:
+            kwargs["api_key"] = self._api_key
+        if self._api_base:
+            kwargs["api_base"] = self._api_base
+        if tools:
+            kwargs["tools"] = tools
+
+        logger.debug("llm.chat_stream: model=%s messages=%d tools=%d", model, len(messages), len(tools or []))
+        try:
+            kwargs["stream_options"] = {"include_usage": True}
+            stream = await litellm.acompletion(**kwargs)
+        except Exception:  # noqa: BLE001 — some providers reject stream_options outright
+            kwargs.pop("stream_options", None)
+            stream = await litellm.acompletion(**kwargs)
+
+        async for chunk in stream:
+            yield _normalize_chunk(chunk)
+
+
+def _normalize_chunk(chunk) -> ChatChunk:
+    content = ""
+    deltas: list[ToolCallDelta] = []
+    for choice in getattr(chunk, "choices", None) or []:
+        delta = getattr(choice, "delta", None)
+        if delta is None:
+            continue
+        content += getattr(delta, "content", None) or ""
+        for tc in getattr(delta, "tool_calls", None) or []:
+            fn = getattr(tc, "function", None)
+            deltas.append(
+                ToolCallDelta(
+                    index=getattr(tc, "index", 0) or 0,
+                    id=getattr(tc, "id", None),
+                    name=getattr(fn, "name", None) if fn is not None else None,
+                    arguments_delta=(getattr(fn, "arguments", "") or "") if fn is not None else "",
+                )
+            )
+    usage = getattr(chunk, "usage", None)
+    return ChatChunk(
+        content_delta=content,
+        tool_call_deltas=deltas,
+        usage=Usage(
+            prompt_tokens=getattr(usage, "prompt_tokens", 0) or 0,
+            completion_tokens=getattr(usage, "completion_tokens", 0) or 0,
+            total_tokens=getattr(usage, "total_tokens", 0) or 0,
+        ) if usage is not None else None,
+    )

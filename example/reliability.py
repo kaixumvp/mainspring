@@ -17,7 +17,7 @@ from ouroboros.ports import PluginManifest
 from ouroboros.skills.agent_skill import AgentSkill
 from ouroboros.tools.base import BaseTool, ToolResult
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 class FlakyTool(BaseTool):
@@ -70,7 +70,6 @@ async def retry_in_agent() -> None:
     registry.register_tool(flaky)
 
     llm = ScriptedLLM([
-        plan("调用 flaky 工具"),
         tool_call("flaky", {}),
         finish("recovered"),
     ])

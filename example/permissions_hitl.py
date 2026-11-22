@@ -15,7 +15,7 @@ from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.ports import PermissionContext, PermissionDecision, check_permission
 from ouroboros.tools.base import BaseTool, ToolResult
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 class DeleteAccountTool(BaseTool):
@@ -48,7 +48,6 @@ async def main() -> None:
     registry.register_tool(DeleteAccountTool())
 
     llm = ScriptedLLM([
-        plan("删除账号 u42"),
         tool_call("delete_account", {"user_id": "u42"}),
         finish("账号 u42 已删除。"),
     ])

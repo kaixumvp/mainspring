@@ -17,7 +17,7 @@ from ouroboros.llm.replay import ReplayGateway, RecordingGateway, dump_recording
 from ouroboros.plugins.registry import PluginRegistry
 from ouroboros.tools.registry import build_default_registry
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 def build_definition() -> AgentDefinition:
@@ -33,7 +33,6 @@ async def main() -> None:
 
     # 1. 用「真」LLM 跑一次，同时记录响应
     real_llm = ScriptedLLM([
-        plan("计算 3*8+100"),
         tool_call("calculator", {"expression": "3*8+100"}),
         finish("3*8+100 = 124"),
     ])

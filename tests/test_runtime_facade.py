@@ -46,7 +46,7 @@ def _definition(**overrides) -> AgentDefinition:
 
 @pytest.mark.asyncio
 async def test_runtime_converges_with_tool_call():
-    llm = MockLLMGateway([_plan_response(), _calc_call_response(), _finish_response()])
+    llm = MockLLMGateway([_calc_call_response(), _finish_response()])
     deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0))
     rt = AgentRuntime()
 
@@ -54,9 +54,24 @@ async def test_runtime_converges_with_tool_call():
 
     assert res.status == "completed"
     assert "124" in (res.result or "")
-    assert res.token_usage["prompt_tokens"] == 10
     assert any(s.node == "execute" for s in res.steps)
+    assert [s.node for s in res.steps] == ["decide", "execute", "observe", "decide"]
+
+
+@pytest.mark.asyncio
+async def test_runtime_plans_when_enabled():
+    llm = MockLLMGateway([_plan_response(), _calc_call_response(), _finish_response()])
+    deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0))
+    rt = AgentRuntime()
+    definition = _definition(runtime=RuntimeConfig(enable_planning=True))
+
+    res = await rt.run(definition, "计算 3*8 再加 100", RunContext(run_id="r1"), deps)
+
+    assert res.status == "completed"
     assert [s.node for s in res.steps] == ["plan", "decide", "execute", "observe", "decide"]
+    # the plan call goes out without tool schemas; decide carries them
+    assert llm.calls[0]["tools"] is None
+    assert llm.calls[1]["tools"]
 
 
 @pytest.mark.asyncio
@@ -79,7 +94,6 @@ async def test_runtime_retries_transient_plugin_failure():
 
     flaky = FlakyPlugin()
     llm = MockLLMGateway([
-        _plan_response(),
         LLMResponse(tool_calls=[ToolCall(id="c1", name="flaky", arguments={})], usage=Usage()),
         _finish_response(),
     ])
@@ -118,7 +132,7 @@ async def test_runtime_pauses_for_approval_and_resumes():
                 return PermissionDecision.REQUIRE_APPROVAL
             return PermissionDecision.ALLOW
 
-    llm = MockLLMGateway([_plan_response(), _calc_call_response(), _finish_response()])
+    llm = MockLLMGateway([_calc_call_response(), _finish_response()])
     checkpointer = InMemoryCheckpointer()
     deps = RuntimeDeps(
         llm=llm,
@@ -131,7 +145,8 @@ async def test_runtime_pauses_for_approval_and_resumes():
 
     paused = await rt.run(_definition(), "计算 3*8 再加 100", RunContext(run_id="r1"), deps)
     assert paused.status == "awaiting_human"
-    assert paused.pending_approvals[0]["resource_id"] == "calculator"
+    # pending entries expose the tool's stable resource_id (tool.id), not the legacy name
+    assert paused.pending_approvals[0]["resource_id"] == "tool_calculator"
 
     resumed = await rt.resume(_definition(), "r1", ["calculator"], deps)
     assert resumed.status == "completed"

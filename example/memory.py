@@ -15,7 +15,7 @@ from ouroboros.memory.manager import MemoryManager
 from ouroboros.memory.reflect import Reflector
 from ouroboros.ports import LongTermMemory, MemoryEntry, WorkingMemory
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 class InMemoryWorking(WorkingMemory):
@@ -69,7 +69,6 @@ async def main() -> None:
 
     # 3. Agent 配合运行：计划阶段召回长期记忆注入 memory_ctx
     llm = ScriptedLLM([
-        plan("回答关于主题偏好的问题"),
         finish("用户偏好深色主题。"),
     ])
     definition = AgentDefinition(model="mock-model", system_prompt="你是助手", plugins=[])

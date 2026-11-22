@@ -13,7 +13,7 @@ from ouroboros import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from ouroboros.knowledge import KnowledgePlugin
 from ouroboros.ports import InvokeContext, KnowledgeEntry, LongTermMemory, MemoryEntry
 
-from _shared import ScriptedLLM, finish, plan, tool_call
+from _shared import ScriptedLLM, finish, tool_call
 
 
 class InMemoryKnowledge:
@@ -60,7 +60,6 @@ async def main() -> None:
     # 2. 知识回退：长期记忆为空 → 计划阶段自动检索知识并回写
     long_term = EmptyLongTerm()
     llm = ScriptedLLM([
-        plan("回答退款政策问题"),
         finish("7 天无理由退货。"),
     ])
     definition = AgentDefinition(model="mock-model", system_prompt="你是客服助手", plugins=[])
