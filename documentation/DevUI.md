@@ -27,11 +27,11 @@ mainspring dev --delay 0                # token 流无间隔（默认 0.02s/块�
 2. `decide` → 调 `transfer`（`permission="admin"`，**暂停** `awaiting_human`）
 3. 点「批准全部」→ `resume` 同 run 续跑 → `decide` 收尾输出答案
 
-demo 完全由 [mainspring/devui/demo.py](../../application/mainspring/mainspring/devui/demo.py) 定义：`ScriptedGateway` 脚本化三轮 LLM 响应（流式按字/词分块），`build_demo_definition()` / `build_demo_deps()` 是标准的 `AgentDefinition` + `RuntimeDeps`——和你在业务代码里写的没有任何区别。
+demo 完全由 [mainspring/devui/demo.py](../mainspring/devui/demo.py) 定义：`ScriptedGateway` 脚本化三轮 LLM 响应（流式按字/词分块），`build_demo_definition()` / `build_demo_deps()` 是标准的 `AgentDefinition` + `RuntimeDeps`——和你在业务代码里写的没有任何区别。
 
 ## 架构（可嵌入宿主）
 
-[mainspring/devui/server.py](../../application/mainspring/mainspring/devui/server.py) 是纯 stdlib 实现，整个数据通路如下：
+[mainspring/devui/server.py](../mainspring/devui/server.py) 是纯 stdlib 实现，整个数据通路如下：
 
 ```
 浏览器 ── EventSource ── GET /events ──┐

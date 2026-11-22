@@ -23,8 +23,8 @@ Plugin/Skill/Tool 机制、记忆和评测等能力，并在 `mainspring.ports` 
 - [Agent 框架使用文档](./Agent框架使用文档.md)
 - [Plugin / Tool / Skill UML（Markdown）](./plugins-tools-skills-uml.md)
 - [Plugin / Tool / Skill UML（HTML）](./plugins-tools-skills-uml.html)
-- [框架 README 与安装示例](../../application/mainspring/README.md)
-- [框架 Changelog](../../application/mainspring/CHANGELOG.md)
+- [框架 README 与安装示例](../README.md)
+- [框架 Changelog](../CHANGELOG.md)
 
 框架不导入宿主的 HTTP、数据库、租户或配置实现。PlatformAgent 的集成边界见
-[业务层详细设计](../platformagent/业务层详细设计.md)。
+[业务层详细设计（PlatformAgent 仓库）](https://github.com/kaixumvp/smartagent/blob/master/documentation/platformagent/业务层详细设计.md)。

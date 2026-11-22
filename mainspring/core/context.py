@@ -1,6 +1,6 @@
 """Pre-request context budgeting (v3.5): build a budgeted, traceable context view.
 
-Three-data separation (see documentation/mainspring/上下文管理设计方案.md): the full run
+Three-data separation (see documentation/上下文管理设计方案.md): the full run
 record lives with the host; the execution state drives the loop; the Context View built
 here is a per-request, disposable input assembled under a token budget. This module is
 pure logic — no network IO, no model calls, deterministic — so it is unit-testable

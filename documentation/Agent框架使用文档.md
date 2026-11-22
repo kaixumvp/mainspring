@@ -1,7 +1,7 @@
 # Mainspring Agent 框架使用文档
 
 本文面向使用 Mainspring 的宿主开发者。Python 安装约束及所有可选能力见
-[项目 README](../../application/mainspring/README.md) 与 [`pyproject.toml`](../../application/mainspring/pyproject.toml)。
+[README](../README.md) 与 [`pyproject.toml`](../pyproject.toml)。
 
 ## 1. 适用边界
 
@@ -77,5 +77,5 @@ execute 节点会在调用前通过注入的权限端口检查。
 
 - [Agent 框架详细设计](./Agent框架层详细设计.md)
 - [框架版本规划](./版本规划.md)
-- [业务层接入约束](../platformagent/业务层详细设计.md)
-- [Mainspring README](../../application/mainspring/README.md)
+- [业务层接入约束（PlatformAgent 仓库）](https://github.com/kaixumvp/smartagent/blob/master/documentation/platformagent/业务层详细设计.md)
+- [Mainspring README](../README.md)

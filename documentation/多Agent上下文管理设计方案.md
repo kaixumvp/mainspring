@@ -39,7 +39,7 @@
   → 字符串作为父 Agent 的工具结果
 ```
 
-当前 [AgentSkill](../../application/mainspring/mainspring/skills/agent_skill.py) 从 `task` 参数或其他参数的 JSON 序列化结果构造任务；[SubagentRunner](../../application/mainspring/mainspring/ports.py) 接收 `agent_ref`、task 字符串和 `InvokeContext`，返回字符串。PlatformAgent 的 [DbSubagentRunner](../../application/platformagent/backend/src/smartagent/adapters/subagent_runner.py) 为子 Agent 创建独立 Run，并通过 `parent_run_id` 关联父运行。
+当前 [AgentSkill](../mainspring/skills/agent_skill.py) 从 `task` 参数或其他参数的 JSON 序列化结果构造任务；[SubagentRunner](../mainspring/ports.py) 接收 `agent_ref`、task 字符串和 `InvokeContext`，返回字符串。PlatformAgent 的 [DbSubagentRunner（PlatformAgent 仓库）](https://github.com/kaixumvp/smartagent/blob/master/application/platformagent/backend/src/smartagent/adapters/subagent_runner.py) 为子 Agent 创建独立 Run，并通过 `parent_run_id` 关联父运行。
 
 ### 2.2 已有的隔离优势
 

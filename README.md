@@ -1,6 +1,6 @@
 # Mainspring
 
-框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/mainspring/`](../../documentation/mainspring/)，新手从 [快速上手](../../documentation/mainspring/快速上手.md) 开始。
+框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/`](documentation/)，新手从 [快速上手](documentation/快速上手.md) 开始。
 
 业务无关的 **Agent 框架层**。提供 Agent 运行循环（Plan → Decide → Execute → Observe）、统一插件协议、Skill/Tool 执行、记忆机制与能力端口（Ports）。
 
@@ -128,7 +128,7 @@ asyncio.run(main())
 mainspring dev                 # 默认 http://127.0.0.1:8765
 ```
 
-三块面板：**步骤时间线**（Decide→Execute→Observe 每步耗时与动作）、**实时输出**（token 级 `message.delta` 流 + 最终结果与用量）、**事件追踪**（原始运行时事件）。内置脚本化 demo（计算 + 转账高危审批）完整演示 HITL 恢复流程。使用说明与架构见 [DevUI 文档](../../documentation/mainspring/DevUI.md)。
+三块面板：**步骤时间线**（Decide→Execute→Observe 每步耗时与动作）、**实时输出**（token 级 `message.delta` 流 + 最终结果与用量）、**事件追踪**（原始运行时事件）。内置脚本化 demo（计算 + 转账高危审批）完整演示 HITL 恢复流程。使用说明与架构见 [DevUI 文档](documentation/DevUI.md)。
 
 ---
 
@@ -182,7 +182,7 @@ runtime = RuntimeConfig(
 - **超预算 = `ContextBudgetExceeded` 响亮失败，绝不静默截断工具 schema，绝不重试**（准入失败不是瞬时错误）。
 - 默认估算器是字符启发式（`chars_per_token=3.0`，CJK 会低估）；宿主经 `RuntimeDeps.token_estimator` 注入 tokenizer 级精确估算。
 - 每次预算化请求的 step output 带 `context` 诊断（计数，不含原文）。
-- 完整设计见 [上下文管理设计方案](../../documentation/mainspring/上下文管理设计方案.md)。
+- 完整设计见 [上下文管理设计方案](documentation/上下文管理设计方案.md)。
 
 ---
 

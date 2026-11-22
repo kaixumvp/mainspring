@@ -42,7 +42,7 @@
   - `mainspring/devui/demo.py`：**离线 demo agent**（`ScriptedGateway` 脚本化三轮 LLM 响应，流式按字/词分块；无需 API key）。剧情覆盖三个关键机制：`calculator` 工具调用（read 直接执行）→ `transfer` 工具（`permission="admin"`）触发 `awaiting_human` 暂停 → 批准后 `resume` 同 run 续跑收尾。`build_demo_definition()` / `build_demo_deps()` 产出标准 `AgentDefinition` + `RuntimeDeps`。
   - `mainspring/cli.py`：`mainspring dev [--host] [--port] [--delay]` 入口，`[tool.poetry.scripts]` 注册。
   - 前端单页 `devui/static/index.html`（原生 JS 无构建）：步骤时间线 / 实时 delta 面板 / 原始事件流水 / 审批卡。
-- **文档站（分层 Markdown）**：`documentation/mainspring/` 新增上手路线：快速上手（3 分钟、离线 10 行跑通）→ `@tool` 开发工具 → 插件与技能 → 进阶（Ports / HITL / 重放）→ DevUI，导航索引已更新。
+- **文档站（分层 Markdown）**：`documentation/` 新增上手路线：快速上手（3 分钟、离线 10 行跑通）→ `@tool` 开发工具 → 插件与技能 → 进阶（Ports / HITL / 重放）→ DevUI，导航索引已更新。
 - `tests/test_devui.py` 8 项：demo 全流程（暂停/批准/完成）、脚本网关流式折叠与工具调用、HTTP 端点、SSE 完整事件序列——全部零外部依赖（`urllib` + 端口 0 临时起服）。
 
 ### 变更

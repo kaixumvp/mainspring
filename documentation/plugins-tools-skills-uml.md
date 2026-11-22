@@ -1,6 +1,6 @@
 # Plugins, Tools and Skills UML
 
-> 本文档统一归档于仓库根的 `documentation/mainspring/`。
+> 本文档统一归档于仓库根的 `documentation/`。
 
 本文档描述 Mainspring 当前实现中 plugins、tools、skills 的核心结构和调用关系。
 

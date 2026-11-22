@@ -60,6 +60,6 @@ Skill 执行分为：
 
 ## 6. 对应实现
 
-代码与测试位于 [`application/mainspring/`](../../application/mainspring/)；使用方式见
+代码与测试位于 [`mainspring/`](../mainspring/)；使用方式见
 [框架使用文档](./Agent框架使用文档.md)，Plugins/Tools/Skills 关系见
 [UML](./plugins-tools-skills-uml.md)。
