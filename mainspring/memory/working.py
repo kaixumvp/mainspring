@@ -1,6 +1,6 @@
-import json
+from __future__ import annotations
 
-from redis.asyncio import Redis
+import json
 
 
 class WorkingBrain:
@@ -11,7 +11,7 @@ class WorkingBrain:
     No consolidation/recall/forgetting (from V0.2 onward).
     """
 
-    def __init__(self, redis: Redis, window_size: int = 20, ttl_seconds: int = 24 * 3600) -> None:
+    def __init__(self, redis: "Redis", window_size: int = 20, ttl_seconds: int = 24 * 3600) -> None:
         self._redis = redis
         self._window_size = window_size
         self._ttl = ttl_seconds

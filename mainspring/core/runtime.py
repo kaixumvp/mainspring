@@ -12,11 +12,12 @@ import asyncio
 import logging
 import time
 import uuid
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from mainspring.context import SlidingWindowContext
 from mainspring.core.context import BUDGET_ERROR_KEY, ContextBudgetExceeded, ContextPolicy
@@ -67,8 +68,21 @@ class RuntimeConfig(BaseModel):
     max_subagent_depth: int = 3
     max_total_tokens: int = 0  # 0 = unlimited token budget (V1.1)
     enable_planning: bool = False  # v2.1: the Plan node costs an extra LLM call per run; opt in when tasks benefit
-    max_history_messages: int = 0  # 0 = unlimited; >0 compacts history before every Decide (v2.1)
+    max_history_messages: int = 0  # deprecated v3.6; ignored when context_policy is set
     context_policy: ContextPolicy | None = None  # v3.5: None disables per-request admission budgeting
+
+    @field_validator("max_history_messages")
+    @classmethod
+    def _warn_max_history_deprecated(cls, v: int) -> int:
+        if v > 0:
+            msg = (
+                "RuntimeConfig.max_history_messages is deprecated since v3.6; "
+                "use context_policy for request-level context budgeting. "
+                "It is ignored when context_policy is set."
+            )
+            logger.warning(msg)
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return v
 
 
 class Step(BaseModel):
@@ -119,7 +133,7 @@ class RuntimeDeps:
     knowledge: Knowledge | None = None
     event_sink: EventSink | None = None
     checkpointer: Checkpointer | None = None
-    context_manager: ContextManager | None = None  # v2.1: overrides max_history_messages when set
+    context_manager: ContextManager | None = None  # host-custom extension; always runs before Decide
     token_estimator: TokenEstimator | None = None  # v3.5: tokenizer-backed estimator; None → char heuristic
     db: Any = None  # transparent handle passed through to LongTermMemory/Knowledge ports
     id_gen: Callable[[str], str] | None = None
@@ -468,8 +482,10 @@ class AgentRuntime:
     def _compact_messages(self, state: dict, deps: RuntimeDeps, cfg: RuntimeConfig) -> list[dict]:
         messages = list(state.get("messages") or [])
         if deps.context_manager is not None:
+            # Host-custom extension: injected context managers always run.
             return deps.context_manager.fit(messages)
-        if cfg.max_history_messages:
+        if cfg.max_history_messages and cfg.context_policy is None:
+            # Deprecated v2.1 path; context_policy replaces it with per-request budgeting.
             return SlidingWindowContext(max_messages=cfg.max_history_messages).fit(messages)
         return messages
 

@@ -2,6 +2,22 @@
 
 本文件按 [SemVer](https://semver.org/) 记录 Mainspring 的变更。v1.0 起：破坏性变更只出现在 major，弃用至少跨一个 minor。
 
+## [3.6.0] - 2026-11-22
+
+### 变更
+- **上下文治理收敛为单一机制**：`RuntimeConfig.context_policy` 成为唯一的框架级上下文治理路径（v3.5 请求级预算）。
+  - `max_history_messages`（v2.1 的永久压缩）**弃用**：设置 `context_policy` 时被忽略；仍设置时发出 `DeprecationWarning` + 警告日志，计划 4.0 移除。
+  - `ContextManager` 端口降级为**宿主自定义扩展**：注入后仍在每次 Decide 前运行（宿主显式选择），不再与框架内置机制并列。
+- **重依赖瘦身为可选 extras**：`litellm` / `redis` / `httpx` 从硬依赖移入 extras，`import mainspring` 不再拉取任何重依赖（此前 `import mainspring` 连带加载 litellm + httpx + openai + tiktoken）。
+  - 安装方式：`pip install 'mainspring[litellm]'`、`'mainspring[http]'`、`'mainspring[redis]'`、`'mainspring[all]'`（all 含 observability）。
+  - `LiteLLMGateway` / `LiteLLMEmbedder` / HTTP 工具 / MCP 客户端改为**延迟导入**（模块级 PEP 562 `__getattr__` + 使用点 `require_optional`）；缺 extra 时抛可操作的 `ImportError`（信息直接给出要装的 extra），而非裸 `ModuleNotFoundError`。
+  - `WorkingBrain` 不再 import `redis`（客户端照旧由宿主注入，类型标注推迟求值）。
+- 新增 `tests/test_slim_deps.py`（5 项）：子进程 + meta_path 阻断器模拟未装 extras 的宿主，验证 `import mainspring` 可用、缺失依赖时报错信息含对应 extra 名。
+
+### 兼容性
+- 现有宿主若使用 `LiteLLMGateway` / `LiteLLMEmbedder` / HTTP/MCP 工具，需自行安装对应 extra（或已直接依赖 litellm/httpx/redis——依赖已装则行为完全不变）。
+- `max_history_messages` 未与 `context_policy` 同用时行为不变（仅多一条弃用警告）。
+
 ## [3.5.0] - 2026-11-22
 
 ### 新增

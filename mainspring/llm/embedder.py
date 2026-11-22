@@ -8,8 +8,7 @@ import hashlib
 import math
 import re
 
-import litellm
-
+from mainspring._optional import require_optional
 from mainspring.ports import Embedder
 
 __all__ = ["Embedder", "LiteLLMEmbedder", "HashEmbedder"]
@@ -24,6 +23,7 @@ class LiteLLMEmbedder:
         self._api_base = api_base
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
+        litellm = require_optional("litellm", "litellm")
         kwargs: dict = {"model": self._model, "input": texts}
         if self._api_key:
             kwargs["api_key"] = self._api_key

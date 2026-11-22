@@ -1,7 +1,7 @@
 import pytest
 
 from conftest import MockLLMGateway, build_default_plugins
-from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
+from mainspring import AgentDefinition, AgentRuntime, ContextPolicy, RunContext, RuntimeConfig, RuntimeDeps
 from mainspring.context import SlidingWindowContext
 from mainspring.core.resilience import RetryPolicy
 from mainspring.llm.base import LLMResponse, Usage
@@ -76,6 +76,53 @@ async def test_runtime_compacts_history_with_max_history_messages():
     user_msgs = [m for m in sent if m.get("role") == "user"]
     assert len(user_msgs) <= 5
     assert user_msgs[-1]["content"] == "current question"
+
+
+@pytest.mark.asyncio
+async def test_max_history_messages_ignored_when_context_policy_set():
+    llm = MockLLMGateway([LLMResponse(content="done", usage=Usage())])
+    deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0))
+    policy = ContextPolicy(context_window_tokens=0)  # window=0: admission off, but policy present
+
+    history = [{"role": "user", "content": f"old question {i}"} for i in range(20)]
+    history.append({"role": "user", "content": "current question"})
+
+    res = await AgentRuntime().run(
+        _def(runtime=RuntimeConfig(max_history_messages=4, context_policy=policy)),
+        "current question", RunContext(run_id="r1"), deps, history=history,
+    )
+
+    assert res.status == "completed"
+    sent = llm.calls[0]["messages"]
+    user_msgs = [m for m in sent if m.get("role") == "user"]
+    # v3.6: context_policy takes over; the deprecated v2.1 compaction must not run
+    assert user_msgs == history
+
+
+@pytest.mark.asyncio
+async def test_injected_context_manager_still_runs_with_context_policy():
+    class RecordingContext:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def fit(self, messages):
+            self.calls += 1
+            return [m for m in messages if m.get("role") != "user" or m["content"] == "keep"]
+
+    cm = RecordingContext()
+    llm = MockLLMGateway([LLMResponse(content="done", usage=Usage())])
+    deps = RuntimeDeps(llm=llm, retry=RetryPolicy(max_retries=0), context_manager=cm)
+
+    res = await AgentRuntime().run(
+        _def(runtime=RuntimeConfig(context_policy=ContextPolicy(context_window_tokens=0))),
+        "keep", RunContext(run_id="r1"), deps,
+        history=[{"role": "user", "content": "drop me"}, {"role": "user", "content": "keep"}],
+    )
+
+    assert res.status == "completed"
+    assert cm.calls == 1
+    sent = llm.calls[0]["messages"]
+    assert [m for m in sent if m.get("role") == "user"] == [{"role": "user", "content": "keep"}]
 
 
 @pytest.mark.asyncio

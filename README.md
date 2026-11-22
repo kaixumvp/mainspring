@@ -33,7 +33,14 @@
 ## 安装
 
 ```bash
-pip install mainspring        # 发布后
+pip install mainspring                 # 核心运行时：仅 pydantic 硬依赖
+pip install 'mainspring[all]'          # 全家桶：litellm + httpx + redis + observability
+
+# 按需安装单个 extras：
+#   mainspring[litellm]   LiteLLMGateway / LiteLLMEmbedder
+#   mainspring[http]      HTTP 工具 / MCP 客户端
+#   mainspring[redis]     Working Brain 等 Redis 集成（客户端仍由宿主注入）
+#   mainspring[observability]  OpenTelemetry
 
 # monorepo 内以 path 依赖（开发态）
 # 宿主工程的 pyproject.toml：
@@ -41,7 +48,8 @@ pip install mainspring        # 发布后
 #   mainspring = { path = "mainspring", develop = true }
 ```
 
-依赖：`python>=3.11`、`litellm`、`pydantic`、`httpx`、`redis`。
+依赖：`python>=3.11` + `pydantic`。重依赖（`litellm` / `httpx` / `redis`）自 v3.6 起为可选 extras，
+`import mainspring` 不再拉取它们；缺失时在**使用点**抛可操作的 `ImportError`（信息直接给出要装的 extra）。
 
 ---
 
@@ -331,20 +339,19 @@ deps = RuntimeDeps(llm=LiteLLMGateway(...), event_sink=sink)
 
 ## 上下文治理
 
-长任务的对话历史会无限增长。`ContextManager` 端口（`ports.py`）在每个 Decide 前压缩历史，**被丢弃的轮次永久移除**（这正是控制窗口的机制）：
+**v3.6 起 `RuntimeConfig.context_policy`（请求级预算，见上节）是唯一的框架级治理机制。** 旧机制的处置：
+
+- `max_history_messages`（v2.1 永久压缩）已**弃用**：与 `context_policy` 同用时被忽略；单独使用仍生效但发 `DeprecationWarning`，计划 4.0 移除。
+- `ContextManager` 端口降级为**宿主自定义扩展**：注入 `RuntimeDeps.context_manager` 后仍在每次 Decide 前运行（宿主显式选择），不再与框架内置机制并列。
 
 ```python
-from mainspring import SlidingWindowContext
+from mainspring import RuntimeDeps
 
-# 零配置：超过 40 条即滑窗压缩 + 截断超长工具结果
-deps = RuntimeDeps(llm=llm)
-definition = AgentDefinition(model="...", runtime=RuntimeConfig(max_history_messages=40))
-
-# 自定义策略（如 LLM 摘要压缩）：实现 ContextManager 协议
+# 自定义压缩策略（如 LLM 摘要压缩）：实现 ContextManager 协议并注入
 deps = RuntimeDeps(llm=llm, context_manager=MySummarizingContext(llm, max_tokens=8000))
 ```
 
-默认实现 `SlidingWindowContext`：保留头部 system 消息 + 最新窗口、切点跳过孤立 tool 消息（避免 API 校验失败）、超长工具结果就地截断。宿主的摘要压缩实现可在构造时自带网关。
+`SlidingWindowContext`（`mainspring.context`）保留作为参考实现：保留头部 system 消息 + 最新窗口、切点跳过孤立 tool 消息（避免 API 校验失败）、超长工具结果就地截断。
 
 ---
 
@@ -391,7 +398,7 @@ resumed = await runtime.resume(definition, "run-1", ["delete_account"], deps)
 |------|------|------|
 | `AgentRuntime` | `core.runtime` | `run(definition, task, context, deps) -> RunResult` / `resume(...)` |
 | `RuntimeDeps` | `core.runtime` | `llm / permission_checker / long_term_memory / knowledge / event_sink / checkpointer / context_manager / tracer / metrics / retry …` |
-| `RuntimeConfig` | `core.runtime` | `max_iterations / timeout_seconds / max_subagent_depth / max_total_tokens / enable_planning / max_history_messages` |
+| `RuntimeConfig` | `core.runtime` | `max_iterations / timeout_seconds / max_subagent_depth / max_total_tokens / enable_planning / context_policy / max_history_messages(弃用)` |
 | `SlidingWindowContext` | `context` | `ContextManager` 默认实现（滑窗 + 工具结果截断） |
 | `StreamingLLMGateway` / `ChatChunk` | `ports` / `llm.base` | 可选流式协议；`LiteLLMGateway.chat_stream` |
 | `PluginRegistry` | `plugins.registry` | `register / register_tool / get / to_openai_schema / invoke` |

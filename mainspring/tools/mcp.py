@@ -9,8 +9,7 @@ import json
 import logging
 from typing import Any
 
-import httpx
-
+from mainspring._optional import require_optional
 from mainspring.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -26,6 +25,7 @@ class McpClient:
         self._next_id = 1
 
     async def _rpc(self, method: str, params: dict | None = None) -> dict:
+        httpx = require_optional("httpx", "http")
         payload = {"jsonrpc": "2.0", "id": self._next_id, "method": method, "params": params or {}}
         self._next_id += 1
         headers = {"Content-Type": "application/json", **self._headers}

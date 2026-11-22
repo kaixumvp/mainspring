@@ -2,8 +2,7 @@ import json
 import logging
 from collections.abc import AsyncIterator
 
-import litellm
-
+from mainspring._optional import require_optional
 from mainspring.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
 from mainspring.llm.structured import parse_structured
 
@@ -19,6 +18,7 @@ class LiteLLMGateway:
         self._api_base = api_base
 
     async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
+        litellm = require_optional("litellm", "litellm")
         model = model or self._model
         kwargs: dict = {"model": model, "messages": messages}
         if self._api_key:
@@ -66,6 +66,7 @@ class LiteLLMGateway:
         return self._stream(messages, model or self._model, tools)
 
     async def _stream(self, messages, model, tools):
+        litellm = require_optional("litellm", "litellm")
         kwargs: dict = {"model": model, "messages": messages, "stream": True}
         if self._api_key:
             kwargs["api_key"] = self._api_key

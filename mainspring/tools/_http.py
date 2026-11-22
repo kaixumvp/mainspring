@@ -7,8 +7,7 @@ transport/HTTP errors into ``success=False`` rather than raising.
 
 import logging
 
-import httpx
-
+from mainspring._optional import require_optional
 from mainspring.tools.base import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -18,6 +17,7 @@ _TRUNCATE = 4000
 
 async def http_request(method: str, url: str, *, timeout: float, **kwargs) -> ToolResult:
     """Send an HTTP request and normalize the outcome into a ``ToolResult``."""
+    httpx = require_optional("httpx", "http")
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.request(method, url, **kwargs)
