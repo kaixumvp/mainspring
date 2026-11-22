@@ -2,7 +2,7 @@
 
 import logging
 
-__version__ = "3.3.0"
+__version__ = "3.4.0"
 
 from mainspring.context import SlidingWindowContext  # noqa: E402
 from mainspring.core.runtime import (  # noqa: E402

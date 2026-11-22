@@ -1,6 +1,6 @@
 # Mainspring
 
-框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/mainspring/`](../../documentation/mainspring/)。
+框架设计、版本路线图、使用说明和 UML 文档统一维护在仓库根的 [`documentation/mainspring/`](../../documentation/mainspring/)，新手从 [快速上手](../../documentation/mainspring/快速上手.md) 开始。
 
 业务无关的 **Agent 框架层**。提供 Agent 运行循环（Plan → Decide → Execute → Observe）、统一插件协议、Skill/Tool 执行、记忆机制与能力端口（Ports）。
 
@@ -25,6 +25,7 @@
 | 记忆 | 短期 Working Brain（Redis）+ 会话固化 Consolidator + `LongTermMemory` 端口 |
 | 授权 | 纯逻辑 `check_permission`（admin 绕过 / deny 优先 / 默认拒绝 / 高危审批） |
 | 事件 | 运行时事件模型（非传输层），含 token 级 `message.delta` |
+| 可视化控制台 | `mainspring dev` 零依赖 DevUI：SSE 事件流、步骤时间线、HITL 审批演示（内置 demo，无需 API key） |
 
 ---
 
@@ -66,7 +67,9 @@ mainspring/
 ├── evaluation/       # GoldenSet / run_evaluation / HeuristicJudge
 ├── observability/    # Tracer（可选 OTel）+ Metrics
 ├── security/         # 工具结果边界标注 + Redactor 脱敏
-└── llm/              # LLMGateway/Embedder 协议 + LiteLLM 实现 + 成本/路由
+├── llm/              # LLMGateway/Embedder 协议 + LiteLLM 实现 + 成本/路由
+├── cli.py            # 命令行入口（mainspring dev）
+└── devui/            # 零依赖可视化控制台（http.server + SSE）
 ```
 
 ---
@@ -104,6 +107,18 @@ asyncio.run(main())
 ```
 
 `RuntimeDeps` 只要求 `llm`；其余端口（`permission_checker` / `long_term_memory` / `knowledge` / `event_sink` / `checkpointer` / `tracer` / `metrics` …）按需注入，全部契约集中在 `mainspring.ports`。
+
+---
+
+## DevUI 可视化控制台
+
+零依赖（stdlib `http.server` + 原生 JS + SSE）的可视化调试台，安装后直接可用，无需 API key：
+
+```bash
+mainspring dev                 # 默认 http://127.0.0.1:8765
+```
+
+三块面板：**步骤时间线**（Decide→Execute→Observe 每步耗时与动作）、**实时输出**（token 级 `message.delta` 流 + 最终结果与用量）、**事件追踪**（原始运行时事件）。内置脚本化 demo（计算 + 转账高危审批）完整演示 HITL 恢复流程。使用说明与架构见 [DevUI 文档](../../documentation/mainspring/DevUI.md)。
 
 ---
 
