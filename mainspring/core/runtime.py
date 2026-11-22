@@ -19,6 +19,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from mainspring.context import SlidingWindowContext
+from mainspring.core.context import BUDGET_ERROR_KEY, ContextBudgetExceeded, ContextPolicy
 from mainspring.core.nodes import decide as decide_mod
 from mainspring.core.nodes import execute as execute_mod
 from mainspring.core.nodes import observe as observe_mod
@@ -48,6 +49,7 @@ from mainspring.ports import (
     Metrics,
     PermissionChecker,
     PermissionContext,
+    TokenEstimator,
 )
 from mainspring.security import Redactor, default_redactor
 
@@ -66,6 +68,7 @@ class RuntimeConfig(BaseModel):
     max_total_tokens: int = 0  # 0 = unlimited token budget (V1.1)
     enable_planning: bool = False  # v2.1: the Plan node costs an extra LLM call per run; opt in when tasks benefit
     max_history_messages: int = 0  # 0 = unlimited; >0 compacts history before every Decide (v2.1)
+    context_policy: ContextPolicy | None = None  # v3.5: None disables per-request admission budgeting
 
 
 class Step(BaseModel):
@@ -117,6 +120,7 @@ class RuntimeDeps:
     event_sink: EventSink | None = None
     checkpointer: Checkpointer | None = None
     context_manager: ContextManager | None = None  # v2.1: overrides max_history_messages when set
+    token_estimator: TokenEstimator | None = None  # v3.5: tokenizer-backed estimator; None → char heuristic
     db: Any = None  # transparent handle passed through to LongTermMemory/Knowledge ports
     id_gen: Callable[[str], str] | None = None
     retry: RetryPolicy | None = None
@@ -247,7 +251,6 @@ class AgentRuntime:
         run_id = state.get("run_id")
         model = definition.model
         system_prompt = definition.system_prompt
-        tool_schemas = registry.to_openai_schema()
         policy = deps.retry or RetryPolicy()
         tracer = deps.tracer or default_tracer
         metrics = deps.metrics or noop_metrics
@@ -269,9 +272,13 @@ class AgentRuntime:
                         state["messages"] = self._compact_messages(state, deps, cfg)
                     seq += 1
                     update, latency_ms = await self._run_node(
-                        node, state, model, system_prompt, tool_schemas, registry, deps, policy, tracer, metrics
+                        node, state, model, system_prompt, registry, deps, policy, tracer, metrics, cfg
                     )
                     state.update(update)
+                    if update.get(BUDGET_ERROR_KEY):
+                        # Admission failure is not a transient LLM error — fail the run
+                        # outside the retry wrapper instead of resending the oversized request.
+                        raise ContextBudgetExceeded(update[BUDGET_ERROR_KEY])
                     self._merge_usage(usage, update)
                     if cfg.max_total_tokens and usage["total_tokens"] > cfg.max_total_tokens:
                         raise TokenBudgetExceeded(
@@ -320,6 +327,8 @@ class AgentRuntime:
             error = str(exc)
         except TokenBudgetExceeded as exc:
             error = str(exc)
+        except ContextBudgetExceeded as exc:
+            error = str(exc)
         except Exception as exc:  # noqa: BLE001
             logger.exception("run failed: run_id=%s", run_id)
             error = str(exc)
@@ -335,12 +344,12 @@ class AgentRuntime:
         state: dict,
         model: str,
         system_prompt: str | None,
-        tool_schemas: list[dict],
         registry: PluginRegistry,
         deps: RuntimeDeps,
         policy: RetryPolicy,
         tracer,
         metrics,
+        cfg: RuntimeConfig,
     ) -> tuple[dict, int]:
         run_id = state.get("run_id")
         start = time.perf_counter()
@@ -348,7 +357,7 @@ class AgentRuntime:
             try:
                 update = await run_with_retry(
                     lambda: self._call_node(
-                        node, state, model, system_prompt, tool_schemas, registry, deps, tracer, metrics
+                        node, state, model, system_prompt, registry, deps, cfg, tracer, metrics
                     ),
                     policy=policy,
                     breaker=deps.circuit_breaker,
@@ -366,23 +375,33 @@ class AgentRuntime:
         state: dict,
         model: str,
         system_prompt: str | None,
-        tool_schemas: list[dict],
         registry: PluginRegistry,
         deps: RuntimeDeps,
+        cfg: RuntimeConfig,
         tracer=None,
         metrics=None,
     ) -> dict:
         if node == "plan":
-            return await plan_mod.run_plan(state, deps.llm, model)
+            return await plan_mod.run_plan(
+                state, deps.llm, model,
+                context_policy=cfg.context_policy,
+                token_estimator=deps.token_estimator,
+            )
         if node == "decide":
+            # Tool schemas are built per request so they participate in this request's
+            # budget accounting (v3.5), instead of once per run (pre-v3.5 behavior).
             emitter = self._delta_emitter(state, deps)
             return await decide_mod.run_decide(
-                state, deps.llm, model, tool_schemas, system_prompt, on_delta=emitter
+                state, deps.llm, model, registry.to_openai_schema(), system_prompt,
+                on_delta=emitter,
+                context_policy=cfg.context_policy,
+                token_estimator=deps.token_estimator,
             )
         if node == "execute":
+            result_limit = cfg.context_policy.tool_result_chars if cfg.context_policy is not None else 0
             return await execute_mod.run_execute(
                 state, registry, deps.permission_checker, deps.permission_context,
-                tracer=tracer, metrics=metrics,
+                tracer=tracer, metrics=metrics, result_limit=result_limit,
             )
         if node == "observe":
             return await observe_mod.run_observe(state)
@@ -476,11 +495,14 @@ class AgentRuntime:
         if node == "plan":
             return {"plan": [s.get("description") for s in update.get("plan", [])]}
         if node == "decide":
-            return {
+            output = {
                 "action": update.get("action"),
                 "action_input": update.get("action_input"),
                 "result": update.get("result"),
             }
+            if update.get("context"):
+                output["context"] = update["context"]
+            return output
         if node == "execute":
             return {"result": update.get("last_tool_result")}
         if node == "observe":

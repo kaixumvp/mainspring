@@ -2,6 +2,22 @@
 
 本文件按 [SemVer](https://semver.org/) 记录 Mainspring 的变更。v1.0 起：破坏性变更只出现在 major，弃用至少跨一个 minor。
 
+## [3.5.0] - 2026-11-22
+
+### 新增
+- **请求级上下文预算治理**（`RuntimeConfig.context_policy`，默认 `None` 关闭，行为零变化）：「三数据分离」（完整运行记录归宿主 / 执行状态驱动循环 / 每次请求组装可丢弃的 Context View）在框架内的落地，长跑（几百步）不再靠宿主编外裁剪或撞上下文窗口。
+  - `ContextPolicy`：`context_window_tokens`（0=禁用准入）、`max_output_tokens`、`safety_margin_tokens`、`memory_token_budget`、`tool_schema_token_budget`、`tool_result_chars`、`chars_per_token`。
+  - `TokenEstimator` 端口（`RuntimeDeps.token_estimator`）：宿主可注入 tokenizer 级精确估算；默认 `CharTokenEstimator`（字符数/`chars_per_token` 启发式，CJK 内容约 1 字符/token，默认 3.0 会**低估**——中文宿主请调低或注入真实估算器）。
+  - `build_context()`（`mainspring/core/context.py`，纯函数、无 IO、确定性）：组装顺序 = system → plan → memory → history；压缩顺序 = 记忆尾部裁剪（相关性顺序）→ 工具 schema 预算检查 → 历史从前端丢弃；受保护内容（system 头、最后一条用户消息、工具调用/结果配对）绝不静默丢弃；裁剪处插入 `[N earlier messages omitted by token budget]` 标记（标记自身成本也计入预算）。
+  - **超预算 = 响亮失败，绝不静默截断**：工具 schema 超 `tool_schema_token_budget` 抛 `ContextBudgetExceeded`（错误信息直接告诉宿主缩小工具白名单）；压缩后仍超限同样抛出。Decide/Plan 节点以哨兵键返回，运行时在 `run_with_retry` **之外**抛出——准入失败不是瞬时错误，绝不对同一个超预算请求重试。
+  - `tool_result_chars`：工具结果进模型上下文前截断，追加 `…[truncated to N chars of M — content incomplete]` 标记（默认 0=不限）。
+  - Decide 节点诊断：每次预算化请求在 step output 暴露 `context` 诊断（`estimated_tokens`/`input_limit`/`breakdown`/`actions`，只含计数不含原文）。
+- **工具 schema 改为每次 Decide 现算**（`registry.to_openai_schema()` 从 run 级移到请求级），schema 成本参与该请求的预算核算。
+
+### 变更
+- `run_plan` / `run_decide` / `run_execute` 签名新增关键字参数（`context_policy` / `token_estimator` / `result_limit`），全部带默认值；未启用 `context_policy` 时消息组装路径与 3.4.0 完全一致。
+- `mainspring/__init__.py` 导出 `ContextPolicy`。
+
 ## [3.4.0] - 2026-11-22
 
 ### 新增

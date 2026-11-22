@@ -1,6 +1,7 @@
 import json
 import logging
 
+from mainspring.core.context import BUDGET_ERROR_KEY, ContextBudgetExceeded, build_context
 from mainspring.core.state import AgentState, PlanStep
 from mainspring.ports import LLMGateway
 
@@ -35,19 +36,45 @@ def _parse_plan(content: str | None) -> list[PlanStep]:
     return steps
 
 
-async def run_plan(state: AgentState, llm: LLMGateway, model: str) -> dict:
+async def run_plan(
+    state: AgentState,
+    llm: LLMGateway,
+    model: str,
+    *,
+    context_policy=None,
+    token_estimator=None,
+) -> dict:
     task = state["task"]
-    messages = [
-        {"role": "system", "content": _PLAN_SYSTEM},
-        {"role": "user", "content": task},
-    ]
-    # Inject recalled long-term memories as planning context (V0.2 baseline recall).
     memory_ctx = state.get("memory_ctx") or []
-    if memory_ctx:
-        ctx_text = "\n".join(m.get("content", "") for m in memory_ctx)
-        messages.append(
-            {"role": "system", "content": f"Relevant past memories about this user/task:\n{ctx_text}"}
-        )
+    if context_policy is not None and context_policy.context_window_tokens > 0:
+        try:
+            built = build_context(
+                system_prompt=_PLAN_SYSTEM,
+                plan=None,
+                memory=memory_ctx,
+                messages=[{"role": "user", "content": task}],
+                tools=[],
+                policy=context_policy,
+                estimator=token_estimator,
+            )
+        except ContextBudgetExceeded as exc:
+            logger.error(
+                "plan: context budget exceeded run_id=%s estimated=%d limit=%d",
+                state.get("run_id"), exc.estimated_tokens, exc.input_limit,
+            )
+            return {BUDGET_ERROR_KEY: str(exc)}
+        messages = built.messages
+    else:
+        messages = [
+            {"role": "system", "content": _PLAN_SYSTEM},
+            {"role": "user", "content": task},
+        ]
+        # Inject recalled long-term memories as planning context (V0.2 baseline recall).
+        if memory_ctx:
+            ctx_text = "\n".join(m.get("content", "") for m in memory_ctx)
+            messages.append(
+                {"role": "system", "content": f"Relevant past memories about this user/task:\n{ctx_text}"}
+            )
     plan: list[PlanStep] = []
     usage: dict = {}
     try:

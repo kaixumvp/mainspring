@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "mainspring"
-version = "3.4.0"
+version = "3.5.0"
 description = "Mainspring: a business-agnostic agent runtime (Plan → Decide → Execute → Observe loop) with plugins, skills, tools, and memory."
 readme = "README.md"
 license = "MIT"

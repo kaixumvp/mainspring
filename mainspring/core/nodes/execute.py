@@ -3,6 +3,7 @@ import json
 import logging
 import time
 
+from mainspring.core.context import limit_tool_result
 from mainspring.core.state import FINISH, AgentState
 from mainspring.observability.metrics import noop_metrics
 from mainspring.observability.trace import default_tracer
@@ -58,6 +59,7 @@ async def run_execute(
     *,
     tracer=None,
     metrics=None,
+    result_limit: int = 0,
 ) -> dict:
     tracer = tracer or default_tracer
     metrics = metrics or noop_metrics
@@ -96,7 +98,7 @@ async def run_execute(
 
     # Invoke — in parallel when the LLM returned multiple tool calls (V0.4).
     if len(calls) == 1:
-        result = await _invoke_one(state, registry, calls[0], tracer, metrics)
+        result = await _invoke_one(state, registry, calls[0], tracer, metrics, result_limit)
         return {
             "last_tool_result": result,
             "tool_call_ids": [calls[0]["id"]],
@@ -104,7 +106,7 @@ async def run_execute(
         }
 
     results = await asyncio.gather(
-        *[_invoke_one(state, registry, call, tracer, metrics) for call in calls]
+        *[_invoke_one(state, registry, call, tracer, metrics, result_limit) for call in calls]
     )
     combined = "\n".join(f"[{call['name']}] {result}" for call, result in zip(calls, results))
     return {
@@ -114,7 +116,9 @@ async def run_execute(
     }
 
 
-async def _invoke_one(state: AgentState, registry: PluginRegistry, call: dict, tracer, metrics) -> str:
+async def _invoke_one(
+    state: AgentState, registry: PluginRegistry, call: dict, tracer, metrics, result_limit: int = 0
+) -> str:
     name = call["name"]
     plugin = registry.get(name)
     if plugin is None:
@@ -153,4 +157,8 @@ async def _invoke_one(state: AgentState, registry: PluginRegistry, call: dict, t
 
     metrics.incr("mainspring.tool.calls", labels={"name": name})
     metrics.observe("mainspring.tool.latency_ms", int((time.perf_counter() - start) * 1000), {"name": name})
-    return _coerce_result(result)
+    text = _coerce_result(result)
+    if result_limit > 0 and len(text) > result_limit:
+        logger.warning("execute: tool result for %s limited to %d chars", name, result_limit)
+        return limit_tool_result(text, result_limit)
+    return text

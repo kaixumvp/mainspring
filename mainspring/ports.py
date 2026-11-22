@@ -108,6 +108,17 @@ class ContextManager(Protocol):
     def fit(self, messages: list[dict]) -> list[dict]: ...
 
 
+class TokenEstimator(Protocol):
+    """Estimates the input-token cost of a candidate request (messages + tool schemas).
+
+    The framework default is a conservative character heuristic; hosts wanting provider
+    accuracy inject a tokenizer-backed implementation (e.g. ``litellm.token_counter``).
+    Estimates are advisory — the budget check reports them as estimates, never exact.
+    """
+
+    def estimate(self, messages: list[dict], tools: list[dict] | None = None) -> int: ...
+
+
 # --------------------------------------------------------------------------- embedder
 class Embedder(Protocol):
     """Text → vector, used by long-term memory for semantic recall."""

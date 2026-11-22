@@ -2,9 +2,10 @@
 
 import logging
 
-__version__ = "3.4.0"
+__version__ = "3.5.0"
 
 from mainspring.context import SlidingWindowContext  # noqa: E402
+from mainspring.core.context import ContextPolicy  # noqa: E402
 from mainspring.core.runtime import (  # noqa: E402
     AgentDefinition,
     AgentRuntime,
@@ -24,6 +25,7 @@ __all__ = [
     "RuntimeConfig",
     "RuntimeDeps",
     "SlidingWindowContext",
+    "ContextPolicy",
     "Step",
 ]
 

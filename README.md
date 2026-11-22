@@ -19,6 +19,7 @@
 | `@tool` 装饰器 | 类型化函数直出 `BaseTool`：签名自动生成参数 JSON Schema，docstring 即描述 |
 | Checkpointer 后端 | `checkpoint/`：SQLite / Redis / PostgreSQL 官方实现，与 `InMemoryCheckpointer` 行为互换；损坏/版本不符响亮失败 |
 | 上下文治理 | `ContextManager` 端口 + 默认滑窗（`SlidingWindowContext`），长任务不爆窗口 |
+| 上下文预算 | `ContextPolicy` 请求级准入：token 估算、记忆裁剪、历史压缩（带省略标记）、工具结果截断；超预算响亮失败不重试（v3.5，opt-in） |
 | 统一插件协议 | `Plugin` / `PluginManifest`，Tool / Skill / Knowledge… 统一接入 |
 | 工具执行 | 内置 `calculator`/`http`，支持 MCP 客户端、HTTP(OpenAPI) 适配 |
 | 技能执行 | 四种形态：`prompt` / `function` / `flow` / `agent` |
@@ -54,6 +55,7 @@ mainspring/
 ├── core/
 │   ├── runtime.py     # AgentRuntime 门面（run/resume + 强类型）
 │   ├── state.py       # AgentState（循环内共享状态）
+│   ├── context.py     # ContextPolicy / build_context / CharTokenEstimator / limit_tool_result（v3.5 请求级预算）
 │   ├── resilience.py  # RetryPolicy / CircuitBreaker
 │   ├── checkpointer.py# InMemoryCheckpointer（测试/进程内默认）
 │   └── nodes/         # plan（可选）/ decide / execute / observe
@@ -148,6 +150,31 @@ mainspring dev                 # 默认 http://127.0.0.1:8765
 | `observe` | 回填结果、`iteration+1`、触顶兜底 |
 
 Plan 默认关闭的原因：它每次 run 多花一次 LLM 调用，而计划状态从未被跟踪；单循环决策已覆盖大多数任务（与 OpenAI Agents SDK 同一哲学）。
+
+### 请求级上下文预算（v3.5，opt-in）
+
+`RuntimeConfig.context_policy` 默认 `None`（完全关闭，行为与 3.4 一致）。配置后，每次 Plan/Decide 请求先经 `build_context()` 组装一个**预算内、可追溯**的 Context View：
+
+```python
+from mainspring import ContextPolicy, RuntimeConfig
+
+runtime = RuntimeConfig(
+    context_policy=ContextPolicy(
+        context_window_tokens=128_000,
+        max_output_tokens=4_096,        # 预留模型回复空间
+        safety_margin_tokens=1_024,     # 吸收估算误差
+        memory_token_budget=2_000,      # 记忆超过预算时从尾部（最不相关）裁剪
+        tool_schema_token_budget=10_000,# 工具白名单过大 = 配置错误，响亮失败
+        tool_result_chars=8_000,        # 工具结果进上下文前截断并加不完整标记
+    )
+)
+```
+
+- 组装顺序：system → plan → memory → history；压缩顺序：记忆尾部裁剪 → 工具 schema 检查 → 历史前端丢弃（保留 system 头、最后一条用户消息、工具调用/结果配对，裁剪处插 `[N earlier messages omitted by token budget]` 标记）。
+- **超预算 = `ContextBudgetExceeded` 响亮失败，绝不静默截断工具 schema，绝不重试**（准入失败不是瞬时错误）。
+- 默认估算器是字符启发式（`chars_per_token=3.0`，CJK 会低估）；宿主经 `RuntimeDeps.token_estimator` 注入 tokenizer 级精确估算。
+- 每次预算化请求的 step output 带 `context` 诊断（计数，不含原文）。
+- 完整设计见 [上下文管理设计方案](../../documentation/mainspring/上下文管理设计方案.md)。
 
 ---
 

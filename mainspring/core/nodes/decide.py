@@ -2,8 +2,9 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 
+from mainspring.core.context import BUDGET_ERROR_KEY, ContextBudgetExceeded, build_context
 from mainspring.core.state import FINISH, AgentState
-from mainspring.ports import ChatChunk, LLMGateway, LLMResponse
+from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, TokenEstimator
 from mainspring.llm.stream import accumulate_response
 
 logger = logging.getLogger(__name__)
@@ -21,30 +22,63 @@ async def run_decide(
     tool_schemas: list[dict],
     system_prompt: str | None = None,
     on_delta: DeltaCallback | None = None,
+    *,
+    context_policy=None,
+    token_estimator: TokenEstimator | None = None,
 ) -> dict:
     system = system_prompt or _DEFAULT_SYSTEM
-    messages: list[dict] = [{"role": "system", "content": system}]
 
     plan = state.get("plan") or []
-    if plan:
-        plan_text = "\n".join(f"{s['id']}. {s['description']}" for s in plan)
-        messages.append({"role": "system", "content": f"Current plan:\n{plan_text}"})
-
-    # Recalled long-term memories / knowledge fallback must reach the LLM even when the
-    # (optional) Plan node is disabled — Decide is the only guaranteed LLM call.
     memory_ctx = state.get("memory_ctx") or []
-    if memory_ctx:
-        ctx_text = "\n".join(m.get("content", "") for m in memory_ctx)
-        messages.append(
-            {"role": "system", "content": f"Relevant past memories about this user/task:\n{ctx_text}"}
-        )
+    history = state.get("messages") or []
 
-    messages.extend(state.get("messages") or [])
+    diagnostics: dict | None = None
+    if context_policy is not None and context_policy.context_window_tokens > 0:
+        # Budget admission before the LLM call; on rejection return a sentinel the runtime
+        # turns into a run failure without retrying the same oversized request.
+        try:
+            built = build_context(
+                system_prompt=system,
+                plan=plan,
+                memory=memory_ctx,
+                messages=history,
+                tools=list(tool_schemas),
+                policy=context_policy,
+                estimator=token_estimator,
+            )
+        except ContextBudgetExceeded as exc:
+            logger.error(
+                "decide: context budget exceeded run_id=%s estimated=%d limit=%d actions=%s",
+                state.get("run_id"), exc.estimated_tokens, exc.input_limit, exc.actions,
+            )
+            return {BUDGET_ERROR_KEY: str(exc)}
+        messages = built.messages
+        tools = built.tools
+        if built.actions:
+            logger.warning("decide: context compacted run_id=%s actions=%s", state.get("run_id"), built.actions)
+        diagnostics = {
+            "estimated_tokens": built.estimated_tokens,
+            "input_limit": built.input_limit,
+            "breakdown": built.breakdown,
+            "actions": built.actions,
+        }
+    else:
+        messages = [{"role": "system", "content": system}]
+        if plan:
+            plan_text = "\n".join(f"{s['id']}. {s['description']}" for s in plan)
+            messages.append({"role": "system", "content": f"Current plan:\n{plan_text}"})
+        if memory_ctx:
+            ctx_text = "\n".join(m.get("content", "") for m in memory_ctx)
+            messages.append(
+                {"role": "system", "content": f"Relevant past memories about this user/task:\n{ctx_text}"}
+            )
+        messages.extend(history)
+        tools = tool_schemas or None
 
     if on_delta is not None and hasattr(llm, "chat_stream"):
-        resp = await _stream_response(llm, messages, model, tool_schemas or None, on_delta)
+        resp = await _stream_response(llm, messages, model, tools, on_delta)
     else:
-        resp = await llm.chat(messages=messages, model=model, tools=tool_schemas or None)
+        resp = await llm.chat(messages=messages, model=model, tools=tools)
 
     if resp.tool_calls:
         tool_calls = [
@@ -69,7 +103,7 @@ async def run_decide(
         })
         first = tool_calls[0]
         logger.debug("decide: action=%s (%d tool calls)", first["name"], len(tool_calls))
-        return {
+        update: dict = {
             "action": first["name"],
             "action_input": first["arguments"],
             "tool_call_id": first["id"],
@@ -77,9 +111,15 @@ async def run_decide(
             "messages": messages_history,
             "token_usage": resp.usage.model_dump(),
         }
+        if diagnostics is not None:
+            update["context"] = diagnostics
+        return update
 
     logger.debug("decide: finish")
-    return {"action": FINISH, "result": resp.content or "", "token_usage": resp.usage.model_dump()}
+    update = {"action": FINISH, "result": resp.content or "", "token_usage": resp.usage.model_dump()}
+    if diagnostics is not None:
+        update["context"] = diagnostics
+    return update
 
 
 async def _stream_response(
