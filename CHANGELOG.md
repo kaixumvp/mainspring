@@ -15,6 +15,7 @@
 
 ### 变更
 - `python = ">=3.11"`（移除 `<3.15` 上界）在本版随发行物正式生效——3.3.0 的 PyPI 元数据仍为 `<3.15`，`pip install mainspring==3.4.0` 起与新约束一致。
+- wheel 打包声明 DevUI 静态资源（`mainspring/devui/static/index.html`），PyPI 安装后 `mainspring dev` 可用。
 
 ## [3.3.0] - 2026-11-22
 

@@ -9,6 +9,7 @@ description = "Mainspring: a business-agnostic agent runtime (Plan â†’ Decide â†
 readme = "README.md"
 license = "MIT"
 packages = [{ include = "mainspring" }]
+include = [{ path = "mainspring/devui/static/index.html" }]
 keywords = ["agent", "llm", "framework", "plugins", "skills", "tools", "memory"]
 
 [tool.poetry.dependencies]
