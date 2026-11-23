@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import FakeKnowledge, FakeLongTermMemory, MockLLMGateway, build_default_plugins
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.core.checkpointer import InMemoryCheckpointer
 from mainspring.core.nodes.execute import run_execute

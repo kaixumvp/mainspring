@@ -59,7 +59,7 @@ class Consolidator:
                     content=content,
                     importance=importance,
                 )
-            except Exception:  # noqa: BLE001 — memory persistence is best-effort
+            except Exception:
                 logger.warning("consolidation failed for a candidate", exc_info=True)
                 continue
             inserted += 1

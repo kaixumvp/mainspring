@@ -10,10 +10,10 @@ from mainspring.events.events import (
 
 __all__ = [
     "RuntimeEvent",
-    "run_started",
-    "step_completed",
+    "run_approved",
+    "run_awaiting_human",
     "run_completed",
     "run_failed",
-    "run_awaiting_human",
-    "run_approved",
+    "run_started",
+    "step_completed",
 ]

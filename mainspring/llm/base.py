@@ -15,12 +15,12 @@ from mainspring.ports import (
 )
 
 __all__ = [
+    "ChatChunk",
     "LLMGateway",
     "LLMResponse",
     "StreamingLLMGateway",
-    "ChatChunk",
+    "StructuredOutputError",
     "ToolCall",
     "ToolCallDelta",
     "Usage",
-    "StructuredOutputError",
 ]

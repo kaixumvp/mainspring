@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import FakeLongTermMemory, FakeWorkingMemory
+
 from mainspring.memory.consolidator import Consolidator
 from mainspring.memory.manager import MemoryManager
 from mainspring.ports import MemoryEntry

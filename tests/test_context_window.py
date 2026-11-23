@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import MockLLMGateway, build_default_plugins
+
 from mainspring import AgentDefinition, AgentRuntime, ContextPolicy, RunContext, RuntimeConfig, RuntimeDeps
 from mainspring.context import SlidingWindowContext
 from mainspring.core.resilience import RetryPolicy
@@ -29,7 +29,7 @@ def test_over_limit_keeps_head_system_and_newest():
 
 def test_cut_never_strands_leading_tool_messages():
     cm = SlidingWindowContext(max_messages=3)
-    msgs = [_msg("user", "old")] + [_msg("tool", "t1"), _msg("tool", "t2")] + [_msg("assistant", "a"), _msg("user", "latest")]
+    msgs = [_msg("user", "old"), _msg("tool", "t1"), _msg("tool", "t2"), _msg("assistant", "a"), _msg("user", "latest")]
     out = cm.fit(msgs)
     # cut advances past the tool messages, so the kept tail starts at the assistant turn
     assert out[0]["role"] == "system"  # the omission marker

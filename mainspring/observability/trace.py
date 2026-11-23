@@ -8,7 +8,8 @@ The host injects a ``Tracer`` (or accepts the module default) via ``RuntimeDeps.
 from __future__ import annotations
 
 import contextlib
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 try:  # pragma: no cover - exercised only when opentelemetry-api is installed
     from opentelemetry import trace as _otel_trace
@@ -16,8 +17,6 @@ try:  # pragma: no cover - exercised only when opentelemetry-api is installed
 
     _HAS_OTEL = True
 except ImportError:  # pragma: no cover
-    _otel_trace = None
-    _StatusCode = None
     _HAS_OTEL = False
 
 
@@ -27,7 +26,7 @@ class Tracer:
     def __init__(self, name: str = "mainspring", enabled: bool = True) -> None:
         self._name = name
         self._enabled = bool(enabled and _HAS_OTEL)
-        self._tracer = _otel_trace.get_tracer(name) if self._enabled else None
+        self._tracer: Any = _otel_trace.get_tracer(name) if self._enabled else None
 
     @property
     def enabled(self) -> bool:
@@ -65,4 +64,4 @@ def get_tracer(name: str = "mainspring") -> Tracer:
     return Tracer(name)
 
 
-__all__ = ["Tracer", "get_tracer", "default_tracer"]
+__all__ = ["Tracer", "default_tracer", "get_tracer"]

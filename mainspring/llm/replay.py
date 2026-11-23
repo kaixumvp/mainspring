@@ -15,9 +15,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mainspring.ports import ChatChunk, LLMResponse, Usage
 from mainspring.llm.stream import accumulate_response
 from mainspring.llm.structured import parse_structured, schema_kw
+from mainspring.ports import ChatChunk, LLMResponse
 
 
 class RecordingGateway:

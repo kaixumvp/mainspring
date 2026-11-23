@@ -1,9 +1,9 @@
 import pytest
-
 from conftest import MockLLMGateway, MockStreamingGateway, build_default_plugins
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.core.resilience import RetryPolicy
-from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.llm.base import LLMResponse, Usage
 from mainspring.llm.replay import RecordingGateway, ReplayGateway
 from mainspring.llm.routing import FallbackLLMGateway, FaultTolerantGateway
 from mainspring.llm.stream import accumulate_response

@@ -11,7 +11,7 @@ import re
 from mainspring._optional import require_optional
 from mainspring.ports import Embedder
 
-__all__ = ["Embedder", "LiteLLMEmbedder", "HashEmbedder"]
+__all__ = ["Embedder", "HashEmbedder", "LiteLLMEmbedder"]
 
 
 class LiteLLMEmbedder:
@@ -49,7 +49,7 @@ class HashEmbedder:
     def _embed_one(self, text: str) -> list[float]:
         vec = [0.0] * self._dimension
         for token in re.findall(r"\w+", text.lower()):
-            digest = int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16)  # noqa: S324
+            digest = int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16)
             idx = digest % self._dimension
             sign = 1.0 if (digest >> 8) & 1 else -1.0
             vec[idx] += sign

@@ -19,7 +19,7 @@ def load_spec(raw: str) -> dict:
     if text.startswith("{"):
         return json.loads(text)
     try:
-        import yaml  # type: ignore[import-untyped]
+        import yaml
     except ImportError as exc:  # pragma: no cover - depends on optional dependency
         raise RuntimeError("OpenAPI YAML specs require PyYAML; install it or provide JSON") from exc
     return yaml.safe_load(text)

@@ -1,11 +1,12 @@
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from typing import cast
 
 from mainspring.core.context import BUDGET_ERROR_KEY, ContextBudgetExceeded, build_context
 from mainspring.core.state import FINISH, AgentState
-from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, TokenEstimator
 from mainspring.llm.stream import accumulate_response
+from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, StreamingLLMGateway, TokenEstimator
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ async def run_decide(
             )
             return {BUDGET_ERROR_KEY: str(exc)}
         messages = built.messages
-        tools = built.tools
+        tools: list[dict] | None = built.tools
         if built.actions:
             logger.warning("decide: context compacted run_id=%s actions=%s", state.get("run_id"), built.actions)
         diagnostics = {
@@ -76,7 +77,8 @@ async def run_decide(
         tools = tool_schemas or None
 
     if on_delta is not None and hasattr(llm, "chat_stream"):
-        resp = await _stream_response(llm, messages, model, tools, on_delta)
+        # The hasattr guard is the runtime capability check; the cast states it for type checkers.
+        resp = await _stream_response(cast("StreamingLLMGateway", llm), messages, model, tools, on_delta)
     else:
         resp = await llm.chat(messages=messages, model=model, tools=tools)
 
@@ -123,7 +125,7 @@ async def run_decide(
 
 
 async def _stream_response(
-    llm: LLMGateway,
+    llm: StreamingLLMGateway,
     messages: list[dict],
     model: str,
     tools: list[dict] | None,

@@ -14,6 +14,23 @@
   - `WorkingBrain` 不再 import `redis`（客户端照旧由宿主注入，类型标注推迟求值）。
 - 新增 `tests/test_slim_deps.py`（5 项）：子进程 + meta_path 阻断器模拟未装 extras 的宿主，验证 `import mainspring` 可用、缺失依赖时报错信息含对应 extra 名。
 
+### 工程（随 3.6.0 发布补齐）
+- **CI 落地**（补上 v2.3 当时标注「本轮不做」的矩阵）：
+  - `.github/workflows/ci.yml`：ruff + mypy + pytest，Python 3.11–3.14 全矩阵（ubuntu）+ Windows 两端（3.11/3.14，覆盖子进程沙箱与 DevUI 的本地 HTTP 路径）。
+  - `.github/workflows/release.yml`：推 tag → 校验 tag 与 `pyproject` 版本一致 → `python -m build` + `twine check` → 发布前复跑测试 → PyPI **可信发布（OIDC）**，仓库与 workflow 里不落任何 token。
+- **静态检查基线**：`[tool.ruff]`（E4/E7/E9/F/W/I/B/UP/RUF，line-length 120，target py311）与 `[tool.mypy]`（`files = ["mainspring"]`、`check_untyped_defs`）。自动修复 110 处（导入排序、`__all__` 排序、失效 noqa），其余为下列真实缺陷。
+- **修正的缺陷（宿主无需改代码）**：
+  - `AgentState.run_id` 由 `str | None` 收紧为 `str`；`AgentRuntime._drive` 改为显式接收 `run_id`，不再从 state `get` 出可能为 `None` 的值传给事件工厂。
+  - `run()` 的 `history` / `memory_context` / `approvals` 关键字默认值从 `()` 改为 `None`（原默认值与 `list` 标注自相矛盾；传参行为不变）。
+  - `WorkingBrain.__init__` 标注引用了并不存在的 `Redis` 名（v3.6 去 redis 硬依赖时留下的悬空标注）→ 改为与 `RedisCheckpointer` 一致的鸭子类型注入。
+  - `ToolAsPlugin.manifest` 从「每次访问重建」的 property 改为 `__init__` 物化属性：注册一次插件原本会构造 5 份 manifest，且 property 不满足 `Plugin` 协议的可写成员要求。
+  - `plan.py` 在计划项缺 `description` 时写入 `None`，会带着 `None` 进入 Decide 的计划文本 → 归一为 `""`。
+  - `execute.py` 并行工具结果合并的 `zip(calls, results)` 加 `strict=True`（两者出自同一次 gather，长度不等本身即缺陷）。
+  - `observability/trace.py` 的 `except ImportError: _otel_trace = None` 改为只置 `_HAS_OTEL` 标志：使用点本就由 `_enabled` 门控，把模块名赋成 `None` 让类型与运行时语义互相矛盾。
+  - DevUI `start()` 里的 `self._httpd.app = self` 是无人读取的死赋值（handler 走闭包 `server`）→ 删除。
+  - `tests/test_observability.py::test_tracer_noop_when_otel_absent` 原本依赖「测试环境未安装 opentelemetry」这一假设，装了 `[all]` extras 就失败 → 改为 monkeypatch `_HAS_OTEL`，两种安装形态下都成立。
+- **遗留说明**：`mainspring.tools.builtin.*` 的 `run()` 使用显式命名参数，与 `BaseTool.run(**kwargs)` 抽象签名在类型层面不可互换（实际契约由 `parameters` schema 保证），已在 mypy 配置中按模块豁免并注明原因；`@tool` 装饰器路径不存在该问题。
+
 ### 兼容性
 - 现有宿主若使用 `LiteLLMGateway` / `LiteLLMEmbedder` / HTTP/MCP 工具，需自行安装对应 extra（或已直接依赖 litellm/httpx/redis——依赖已装则行为完全不变）。
 - `max_history_messages` 未与 `context_policy` 同用时行为不变（仅多一条弃用警告）。

@@ -1,12 +1,14 @@
 import ast
 import logging
 import operator
+from collections.abc import Callable
+from typing import Any
 
 from mainspring.tools.base import BaseTool, ToolResult
 
 logger = logging.getLogger(__name__)
 
-_BIN_OPS = {
+_BIN_OPS: dict[type[Any], Callable[..., int | float]] = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
@@ -55,6 +57,6 @@ class CalculatorTool(BaseTool):
         try:
             result = _safe_eval(expression)
             return ToolResult(success=True, output=str(result))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("calculator eval failed: %s", exc)
             return ToolResult(success=False, output="", error=str(exc))

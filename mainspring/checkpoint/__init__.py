@@ -21,10 +21,10 @@ from mainspring.checkpoint.redis import RedisCheckpointer
 from mainspring.checkpoint.sqlite import SQLiteCheckpointer
 
 __all__ = [
-    "SQLiteCheckpointer",
-    "RedisCheckpointer",
-    "PostgresCheckpointer",
     "SCHEMA_VERSION",
-    "encode",
+    "PostgresCheckpointer",
+    "RedisCheckpointer",
+    "SQLiteCheckpointer",
     "decode",
+    "encode",
 ]

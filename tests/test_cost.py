@@ -51,6 +51,7 @@ def test_token_budget_consume_and_exhaust():
 @pytest.mark.asyncio
 async def test_runtime_aborts_on_token_budget():
     from conftest import MockLLMGateway, build_default_plugins
+
     from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
     from mainspring.core.resilience import RetryPolicy
 

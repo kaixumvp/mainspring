@@ -21,6 +21,7 @@ from collections.abc import AsyncIterator
 
 from mainspring.core.checkpointer import InMemoryCheckpointer
 from mainspring.core.runtime import AgentDefinition, RuntimeDeps
+from mainspring.plugins.base import ToolAsPlugin
 from mainspring.ports import (
     ChatChunk,
     LLMResponse,
@@ -31,7 +32,6 @@ from mainspring.ports import (
     Usage,
     check_permission,
 )
-from mainspring.plugins.base import ToolAsPlugin
 from mainspring.tools.builtin.calculator import CalculatorTool
 from mainspring.tools.decorator import tool
 
@@ -154,11 +154,11 @@ def build_demo_deps(event_sink=None, *, stream_delay: float = 0.02, checkpointer
 
 
 __all__ = [
-    "DEMO_TASK",
     "DEMO_MODEL",
-    "ScriptedGateway",
+    "DEMO_TASK",
     "DemoPermissionChecker",
+    "ScriptedGateway",
     "build_demo_definition",
-    "build_script",
     "build_demo_deps",
+    "build_script",
 ]

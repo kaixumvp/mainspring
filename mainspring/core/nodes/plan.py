@@ -31,7 +31,7 @@ def _parse_plan(content: str | None) -> list[PlanStep]:
         return []
     steps: list[PlanStep] = []
     for i, item in enumerate(data, start=1):
-        desc = item.get("description") if isinstance(item, dict) else str(item)
+        desc = str(item.get("description") or "") if isinstance(item, dict) else str(item)
         steps.append({"id": i, "description": desc, "status": "pending"})
     return steps
 
@@ -81,7 +81,7 @@ async def run_plan(
         resp = await llm.chat(messages=messages, model=model)
         plan = _parse_plan(resp.content)
         usage = resp.usage.model_dump()
-    except Exception:  # noqa: BLE001 — fall back to a single-step plan when the LLM fails
+    except Exception:
         logger.warning("plan failed, falling back to a single-step plan", exc_info=True)
         plan = []
     if not plan:

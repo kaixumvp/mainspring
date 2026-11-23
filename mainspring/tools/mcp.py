@@ -81,6 +81,6 @@ class McpTool(BaseTool):
             await client.initialize()
             output = await client.call_tool(self.name, kwargs)
             return ToolResult(success=True, output=output)
-        except Exception as exc:  # noqa: BLE001 — surface MCP failures as a tool error
+        except Exception as exc:
             logger.warning("mcp tool %s failed: %s", self.name, exc)
             return ToolResult(success=False, output="", error=str(exc))

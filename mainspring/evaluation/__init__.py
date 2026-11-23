@@ -6,4 +6,4 @@ from mainspring.evaluation.golden import (
     run_evaluation,
 )
 
-__all__ = ["Case", "GoldenSet", "EvaluationResult", "run_evaluation", "HeuristicJudge"]
+__all__ = ["Case", "EvaluationResult", "GoldenSet", "HeuristicJudge", "run_evaluation"]

@@ -73,11 +73,11 @@ def message_delta(run_id: str, seq: int, delta: str) -> RuntimeEvent:
 
 __all__ = [
     "RuntimeEvent",
-    "run_started",
-    "step_completed",
+    "message_delta",
+    "run_approved",
+    "run_awaiting_human",
     "run_completed",
     "run_failed",
-    "run_awaiting_human",
-    "run_approved",
-    "message_delta",
+    "run_started",
+    "step_completed",
 ]

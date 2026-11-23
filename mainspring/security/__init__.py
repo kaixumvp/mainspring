@@ -57,8 +57,8 @@ default_redactor = Redactor()
 
 
 __all__ = [
+    "TOOL_RESULT_GUARD",
     "Redactor",
     "default_redactor",
-    "TOOL_RESULT_GUARD",
     "wrap_tool_result",
 ]

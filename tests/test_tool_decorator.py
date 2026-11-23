@@ -3,10 +3,10 @@
 from typing import Annotated, Literal
 
 import pytest
-from pydantic import Field, ValidationError
+from pydantic import Field
 
-from mainspring.tools import FunctionTool, ToolRegistry, ToolResult, tool
 from mainspring.plugins.base import ToolAsPlugin
+from mainspring.tools import FunctionTool, ToolRegistry, ToolResult, tool
 
 
 def test_schema_is_derived_from_signature():

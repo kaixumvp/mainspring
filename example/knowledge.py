@@ -9,11 +9,11 @@
 
 import asyncio
 
+from _shared import ScriptedLLM, finish
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.knowledge import KnowledgePlugin
 from mainspring.ports import InvokeContext, KnowledgeEntry, LongTermMemory, MemoryEntry
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 class InMemoryKnowledge:

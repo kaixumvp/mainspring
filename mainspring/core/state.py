@@ -12,7 +12,7 @@ class PlanStep(TypedDict):
 
 class AgentState(TypedDict, total=False):
     agent_id: str
-    run_id: str | None
+    run_id: str
     session_id: str
     tenant_id: str
     user_id: str | None

@@ -22,6 +22,6 @@ async def http_request(method: str, url: str, *, timeout: float, **kwargs) -> To
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.request(method, url, **kwargs)
             return ToolResult(success=resp.is_success, output=resp.text[:_TRUNCATE])
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("http request failed: %s", exc)
         return ToolResult(success=False, output="", error=str(exc))

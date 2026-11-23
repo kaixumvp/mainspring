@@ -35,4 +35,4 @@ class InMemoryCheckpointer:
 
 
 # Re-export the protocol alongside the default implementation for convenience.
-__all__ = ["InMemoryCheckpointer", "Checkpointer"]
+__all__ = ["Checkpointer", "InMemoryCheckpointer"]

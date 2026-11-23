@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from mainspring.llm.base import LLMResponse, ToolCall, Usage
+from mainspring.llm.base import LLMResponse, ToolCall
 from mainspring.llm.litellm_gateway import LiteLLMGateway
 
 

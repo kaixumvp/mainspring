@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import MockLLMGateway, build_default_plugin_registry
+
 from mainspring.core.nodes.decide import run_decide
 from mainspring.core.nodes.execute import run_execute
 from mainspring.core.nodes.observe import run_observe

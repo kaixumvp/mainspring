@@ -1,8 +1,8 @@
 """Unit tests for the core nodes (plan/decide/execute/observe) and their pure helpers."""
 
 import pytest
-
 from conftest import MockLLMGateway, build_default_plugin_registry
+
 from mainspring.core.nodes.decide import run_decide
 from mainspring.core.nodes.execute import _coerce_result, run_execute
 from mainspring.core.nodes.observe import run_observe
@@ -11,8 +11,8 @@ from mainspring.llm.base import LLMResponse, ToolCall, Usage
 from mainspring.plugins.base import PluginManifest
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.ports import PermissionContext, PermissionDecision
-from mainspring.skills.prompt_skill import PromptSkill
 from mainspring.security import wrap_tool_result
+from mainspring.skills.prompt_skill import PromptSkill
 from mainspring.tools.base import ToolResult
 
 

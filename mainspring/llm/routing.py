@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import logging
 
-from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, Usage
 from mainspring.llm.structured import schema_kw
+from mainspring.ports import ChatChunk, LLMGateway, LLMResponse, Usage
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class FallbackLLMGateway:
                 resp = await gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
                 self.last_used = getattr(gateway, "_model", None) or type(gateway).__name__
                 return resp
-            except Exception as exc:  # noqa: BLE001 — failover on any vendor error
+            except Exception as exc:
                 last_exc = exc
                 logger.warning("gateway %s failed, falling back: %s", type(gateway).__name__, exc)
         raise RuntimeError("all LLM gateways failed") from last_exc
@@ -58,7 +58,7 @@ class FallbackLLMGateway:
                     yield chunk
                 self.last_used = getattr(gateway, "_model", None) or type(gateway).__name__
                 return
-            except Exception as exc:  # noqa: BLE001 — failover only pre-first-chunk
+            except Exception as exc:
                 if not first:
                     raise
                 last_exc = exc
@@ -84,7 +84,7 @@ class FaultTolerantGateway:
     async def chat(self, messages, model=None, tools=None, schema=None) -> LLMResponse:
         try:
             resp = await self._gateway.chat(messages, model=model, tools=tools, **schema_kw(schema))
-        except Exception as exc:  # noqa: BLE001 — structured-output fallback
+        except Exception as exc:
             logger.warning("gateway error, falling back to empty response: %s", exc)
             return LLMResponse(content=self._on_error, usage=Usage())
         # Tolerate a response whose tool_calls were not parsed (None) by normalizing to [].
@@ -105,7 +105,7 @@ class FaultTolerantGateway:
             async for chunk in stream_fn(messages, model=model, tools=tools):
                 first = False
                 yield chunk
-        except Exception as exc:  # noqa: BLE001 — degrade pre-first-chunk, re-raise mid-stream
+        except Exception as exc:
             if not first:
                 raise
             logger.warning("gateway stream failed, degrading to on_error chunk: %s", exc)

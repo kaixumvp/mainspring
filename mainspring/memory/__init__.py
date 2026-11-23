@@ -3,4 +3,4 @@ from mainspring.memory.manager import MemoryManager
 from mainspring.memory.reflect import Reflector
 from mainspring.memory.working import WorkingBrain
 
-__all__ = ["WorkingBrain", "Consolidator", "MemoryManager", "Reflector"]
+__all__ = ["Consolidator", "MemoryManager", "Reflector", "WorkingBrain"]

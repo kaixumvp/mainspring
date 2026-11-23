@@ -74,7 +74,7 @@ class FunctionSkill(Skill):
 
     def _run_inline(self, source: str, kwargs: dict) -> str:
         namespace: dict = {"__builtins__": _SAFE_BUILTINS}
-        exec(compile(source, "<function_skill>", "exec"), namespace)  # noqa: S102
+        exec(compile(source, "<function_skill>", "exec"), namespace)
         run_fn = namespace.get("run")
         if not callable(run_fn):
             return "function skill has no run() callable"

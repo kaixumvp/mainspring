@@ -9,14 +9,14 @@
 
 import asyncio
 
+from _shared import ScriptedLLM
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
 from mainspring.core.resilience import RetryPolicy
 from mainspring.llm.base import LLMResponse, Usage
 from mainspring.llm.cost import CachingGateway, TieredRouter, TokenBudget, message_length_classifier
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.tools.registry import build_default_registry
-
-from _shared import ScriptedLLM
 
 
 class Counting:

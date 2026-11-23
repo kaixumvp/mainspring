@@ -4,9 +4,9 @@ import logging
 
 __version__ = "3.6.0"
 
-from mainspring.context import SlidingWindowContext  # noqa: E402
-from mainspring.core.context import ContextPolicy  # noqa: E402
-from mainspring.core.runtime import (  # noqa: E402
+from mainspring.context import SlidingWindowContext
+from mainspring.core.context import ContextPolicy
+from mainspring.core.runtime import (
     AgentDefinition,
     AgentRuntime,
     RunContext,
@@ -17,16 +17,16 @@ from mainspring.core.runtime import (  # noqa: E402
 )
 
 __all__ = [
-    "__version__",
-    "AgentRuntime",
     "AgentDefinition",
+    "AgentRuntime",
+    "ContextPolicy",
     "RunContext",
     "RunResult",
     "RuntimeConfig",
     "RuntimeDeps",
     "SlidingWindowContext",
-    "ContextPolicy",
     "Step",
+    "__version__",
 ]
 
 # Library best practice: attach a NullHandler so an unconfigured host doesn't emit

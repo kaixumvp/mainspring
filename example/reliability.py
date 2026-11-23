@@ -9,6 +9,8 @@
 
 import asyncio
 
+from _shared import ScriptedLLM, finish, tool_call
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeConfig, RuntimeDeps
 from mainspring.core.nodes.execute import run_execute
 from mainspring.core.resilience import CircuitBreaker, RetryPolicy, run_with_retry
@@ -16,8 +18,6 @@ from mainspring.plugins.registry import PluginRegistry
 from mainspring.ports import PluginManifest
 from mainspring.skills.agent_skill import AgentSkill
 from mainspring.tools.base import BaseTool, ToolResult
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 class FlakyTool(BaseTool):
@@ -59,7 +59,7 @@ async def retry_primitives() -> None:
     for i in range(3):
         try:
             await run_with_retry(fail, policy=RetryPolicy(max_retries=0, base_delay=0), breaker=breaker)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  第 {i+1} 次: {type(exc).__name__}")
 
 

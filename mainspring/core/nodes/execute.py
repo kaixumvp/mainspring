@@ -108,7 +108,7 @@ async def run_execute(
     results = await asyncio.gather(
         *[_invoke_one(state, registry, call, tracer, metrics, result_limit) for call in calls]
     )
-    combined = "\n".join(f"[{call['name']}] {result}" for call, result in zip(calls, results))
+    combined = "\n".join(f"[{call['name']}] {result}" for call, result in zip(calls, results, strict=True))
     return {
         "last_tool_result": combined,
         "tool_call_ids": [call["id"] for call in calls],
@@ -150,7 +150,7 @@ async def _invoke_one(
     with tracer.start_span(f"mainspring.plugin.{name}", attributes={"plugin": name, "kind": manifest.kind}) as span:
         try:
             result = await registry.invoke(name, ctx, **action_input)
-        except Exception as exc:  # noqa: BLE001 — log, mark span, re-raise for the runtime's retry
+        except Exception as exc:
             logger.exception("execute: plugin %s raised", name)
             tracer.record_error(span, exc)
             raise

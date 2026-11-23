@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -95,7 +96,7 @@ def limit_tool_result(text: str, max_chars: int) -> str:
 def build_context(
     *,
     system_prompt: str,
-    plan: list[dict] | None = None,
+    plan: Sequence[Mapping[str, Any]] | None = None,
     memory: list[dict] | None = None,
     messages: list[dict],
     tools: list[dict],
@@ -189,7 +190,7 @@ def build_context(
     # 3. history: drop earliest turns until the request fits, reserving a slot for the
     # omission marker so the marker's own cost stays inside the budget.
     marker_template = "[{} earlier messages omitted by token budget]"
-    history = [{"role": "system", "content": marker_template.format(0)}] + history
+    history = [{"role": "system", "content": marker_template.format(0)}, *history]
     final, breakdown, total = assemble(history)
     dropped = 0
     while total > input_limit:

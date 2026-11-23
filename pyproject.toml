@@ -35,6 +35,10 @@ observability = ["opentelemetry-api"]
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.0"
 pytest-asyncio = ">=0.23"
+ruff = ">=0.6"
+mypy = ">=1.11"
+build = ">=1.2"
+twine = ">=5.0"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -43,3 +47,36 @@ log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(levelname)-7s %(name)s: %(message)s"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = ["dist", "documentation"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP", "RUF"]
+ignore = [
+  "RUF001",  # 文档与注释是中文，全角标点是预期写法，不是 confusable
+  "RUF002",
+  "RUF003",
+  "RUF012",  # 工具类的 parameters 是类级默认值，子类覆盖或实例整体赋值，不原地修改
+  "UP042",   # PermissionDecision 保持 (str, Enum)：公共 API 自 1.0 冻结，StrEnum 改变 str() 语义
+]
+
+[tool.ruff.lint.per-file-ignores]
+"mainspring/__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["mainspring"]
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = "mainspring.tools.builtin.*"
+# 内置工具的 run 用显式命名参数（expression/url），调用侧统一按 **kwargs 分发，
+# 因而与 BaseTool.run(**kwargs) 抽象签名在类型层面不可互换；实际契约由 parameters schema 保证
+disable_error_code = ["override"]

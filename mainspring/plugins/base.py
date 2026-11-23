@@ -9,7 +9,7 @@ from typing import Any
 
 from mainspring.ports import InvokeContext, Plugin, PluginManifest
 
-__all__ = ["Plugin", "PluginManifest", "InvokeContext", "ToolAsPlugin"]
+__all__ = ["InvokeContext", "Plugin", "PluginManifest", "ToolAsPlugin"]
 
 
 def _default_json_schema() -> dict:
@@ -27,21 +27,18 @@ class ToolAsPlugin:
 
     def __init__(self, tool: Any) -> None:
         self._tool = tool
-
-    @property
-    def manifest(self) -> PluginManifest:
-        return PluginManifest(
-            name=self._tool.name,
+        self.manifest: PluginManifest = PluginManifest(
+            name=tool.name,
             resource_id=(
-                getattr(self._tool, "resource_id", None)
-                or getattr(self._tool, "id", None)
-                or self._tool.name
+                getattr(tool, "resource_id", None)
+                or getattr(tool, "id", None)
+                or tool.name
             ),
             version="1",
             kind="tool",
-            description=getattr(self._tool, "description", ""),
-            parameters=getattr(self._tool, "parameters", _default_json_schema()),
-            permission=getattr(self._tool, "permission", "read"),
+            description=getattr(tool, "description", ""),
+            parameters=getattr(tool, "parameters", _default_json_schema()),
+            permission=getattr(tool, "permission", "read"),
         )
 
     async def invoke(self, ctx: InvokeContext, **kw: Any) -> Any:

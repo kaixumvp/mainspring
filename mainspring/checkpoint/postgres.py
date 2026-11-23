@@ -13,7 +13,7 @@ business layer's `DbCheckpointer` does exactly that).
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from mainspring.checkpoint.codec import SCHEMA_VERSION, decode, encode
 
@@ -63,7 +63,7 @@ class PostgresCheckpointer:
 
     async def save(self, run_id: str, state: dict) -> None:
         await self._ensure_table()
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         await asyncio.to_thread(self._execute, _UPSERT_SQL, (run_id, encode(state), SCHEMA_VERSION, now))
 
     async def load(self, run_id: str) -> dict | None:

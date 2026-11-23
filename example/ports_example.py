@@ -8,11 +8,12 @@ LLMGateway / PermissionChecker / LongTermMemory / Knowledge / EventSink / Checkp
 
 import asyncio
 
+from _shared import ScriptedLLM, finish, tool_call
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.core.checkpointer import InMemoryCheckpointer
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.ports import (
-    InvokeContext,
     KnowledgeEntry,
     LongTermMemory,
     MemoryEntry,
@@ -22,8 +23,6 @@ from mainspring.ports import (
 )
 from mainspring.skills.manager import SkillManager
 from mainspring.tools.registry import build_default_registry
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 # ---- 各端口实现（宿主职责）----

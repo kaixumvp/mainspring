@@ -54,4 +54,4 @@ class HeuristicJudge:
         )
 
 
-__all__ = ["Case", "GoldenSet", "EvaluationResult", "run_evaluation", "HeuristicJudge"]
+__all__ = ["Case", "EvaluationResult", "GoldenSet", "HeuristicJudge", "run_evaluation"]

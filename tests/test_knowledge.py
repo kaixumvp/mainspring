@@ -1,6 +1,6 @@
 import pytest
-
 from conftest import FakeKnowledge, FakeLongTermMemory
+
 from mainspring.knowledge import KnowledgePlugin
 from mainspring.memory.consolidator import Consolidator
 from mainspring.memory.reflect import Reflector

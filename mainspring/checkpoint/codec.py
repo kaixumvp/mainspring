@@ -37,4 +37,4 @@ def decode(raw: str | bytes) -> dict:
     return envelope["state"]
 
 
-__all__ = ["SCHEMA_VERSION", "encode", "decode"]
+__all__ = ["SCHEMA_VERSION", "decode", "encode"]

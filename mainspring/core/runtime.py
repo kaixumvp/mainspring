@@ -14,8 +14,8 @@ import time
 import uuid
 import warnings
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, cast
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,7 +26,7 @@ from mainspring.core.nodes import execute as execute_mod
 from mainspring.core.nodes import observe as observe_mod
 from mainspring.core.nodes import plan as plan_mod
 from mainspring.core.resilience import CircuitBreaker, CircuitOpenError, RetryPolicy, run_with_retry
-from mainspring.core.state import FINISH
+from mainspring.core.state import FINISH, AgentState
 from mainspring.events.events import (
     message_delta,
     run_approved,
@@ -156,24 +156,25 @@ class AgentRuntime:
         context: RunContext,
         deps: RuntimeDeps,
         *,
-        history: list[dict] = (),
-        memory_context: list[dict] = (),
-        approvals: list[str] = (),
+        history: list[dict] | None = None,
+        memory_context: list[dict] | None = None,
+        approvals: list[str] | None = None,
     ) -> RunResult:
         cfg = definition.runtime or self._config
         run_id = context.run_id or self._gen_id(deps, "run")
         tracer = deps.tracer or default_tracer
         recalled = await self._recall_context(deps, context, task)
         state = self._initial_state(
-            definition, task, context, run_id, cfg, history, list(memory_context) + recalled, approvals
+            definition, task, context, run_id, cfg,
+            history or [], list(memory_context or []) + recalled, approvals or [],
         )
         registry = self._build_registry(definition)
         await self._emit(deps, run_started(run_id))
         with tracer.start_span("mainspring.run", attributes={"run_id": run_id, "agent_id": definition.agent_id}) as span:
             state["trace_id"] = tracer.current_trace_id() or self._gen_id(deps, "trace")
             try:
-                return await self._drive(state, definition, deps, registry, cfg)
-            except Exception as exc:  # noqa: BLE001 — safety net; _drive normally handles errors
+                return await self._drive(state, definition, deps, registry, cfg, run_id)
+            except Exception as exc:
                 tracer.record_error(span, exc)
                 raise
 
@@ -199,7 +200,7 @@ class AgentRuntime:
         state["status"] = "running"
         registry = self._build_registry(definition)
         await self._emit(deps, run_approved(run_id))
-        return await self._drive(state, definition, deps, registry, cfg)
+        return await self._drive(state, definition, deps, registry, cfg, run_id)
 
     # ------------------------------------------------------------------ internals
     def _build_registry(self, definition: AgentDefinition) -> PluginRegistry:
@@ -261,8 +262,8 @@ class AgentRuntime:
         deps: RuntimeDeps,
         registry: PluginRegistry,
         cfg: RuntimeConfig,
+        run_id: str,
     ) -> RunResult:
-        run_id = state.get("run_id")
         model = definition.model
         system_prompt = definition.system_prompt
         policy = deps.retry or RetryPolicy()
@@ -286,7 +287,8 @@ class AgentRuntime:
                         state["messages"] = self._compact_messages(state, deps, cfg)
                     seq += 1
                     update, latency_ms = await self._run_node(
-                        node, state, model, system_prompt, registry, deps, policy, tracer, metrics, cfg
+                        node, cast("AgentState", state), model, system_prompt, registry, deps, policy,
+                        tracer, metrics, cfg
                     )
                     state.update(update)
                     if update.get(BUDGET_ERROR_KEY):
@@ -335,7 +337,7 @@ class AgentRuntime:
             self._record_run(metrics, "completed", state, run_started_at, usage)
             return RunResult(status="completed", result=result, steps=steps, token_usage=usage)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             error = f"run timed out after {cfg.timeout_seconds}s"
         except CircuitOpenError as exc:
             error = str(exc)
@@ -343,7 +345,7 @@ class AgentRuntime:
             error = str(exc)
         except ContextBudgetExceeded as exc:
             error = str(exc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.exception("run failed: run_id=%s", run_id)
             error = str(exc)
 
@@ -355,7 +357,7 @@ class AgentRuntime:
     async def _run_node(
         self,
         node: str,
-        state: dict,
+        state: AgentState,
         model: str,
         system_prompt: str | None,
         registry: PluginRegistry,
@@ -376,7 +378,7 @@ class AgentRuntime:
                     policy=policy,
                     breaker=deps.circuit_breaker,
                 )
-            except Exception as exc:  # noqa: BLE001 — mark span, then let retry/run handle it
+            except Exception as exc:
                 tracer.record_error(span, exc)
                 raise
         latency_ms = int((time.perf_counter() - start) * 1000)
@@ -386,7 +388,7 @@ class AgentRuntime:
     async def _call_node(
         self,
         node: str,
-        state: dict,
+        state: AgentState,
         model: str,
         system_prompt: str | None,
         registry: PluginRegistry,
@@ -445,21 +447,23 @@ class AgentRuntime:
                     deps.db, context.tenant_id, context.user_id, task, top_k=5
                 )
                 contexts = [{"content": e.content, "source": getattr(e, "source", "memory")} for e in entries]
-            except Exception:  # noqa: BLE001 — memory is best-effort
+            except Exception:
                 logger.warning("long-term memory recall failed", exc_info=True)
 
         sufficient = any(
             (e.similarity or 0.0) >= 0.5 or (e.confidence or 0.0) >= 0.5 for e in entries
         )
         if not sufficient and deps.knowledge is not None:
-            contexts = await self._recall_from_knowledge(deps, context, task)
+            contexts = await self._recall_from_knowledge(deps, context, task, deps.knowledge)
         return contexts
 
-    async def _recall_from_knowledge(self, deps: RuntimeDeps, context: RunContext, task: str) -> list[dict]:
+    async def _recall_from_knowledge(
+        self, deps: RuntimeDeps, context: RunContext, task: str, knowledge: Knowledge
+    ) -> list[dict]:
         """Search the Knowledge port and write the results back into long-term memory."""
         try:
-            docs = await deps.knowledge.search(task, top_k=5)
-        except Exception:  # noqa: BLE001 — knowledge is best-effort
+            docs = await knowledge.search(task, top_k=5)
+        except Exception:
             logger.warning("knowledge fallback failed", exc_info=True)
             return []
         contexts = [{"content": d.content, "source": d.source or "knowledge"} for d in docs]
@@ -475,7 +479,7 @@ class AgentRuntime:
                         importance=0.3,
                         confidence=0.5,
                     )
-                except Exception:  # noqa: BLE001 — write-back is best-effort
+                except Exception:
                     pass
         return contexts
 
@@ -489,11 +493,11 @@ class AgentRuntime:
             return SlidingWindowContext(max_messages=cfg.max_history_messages).fit(messages)
         return messages
 
-    def _delta_emitter(self, state: dict, deps: RuntimeDeps):
+    def _delta_emitter(self, state: AgentState, deps: RuntimeDeps):
         """Build the Decide-node streaming callback; None disables streaming entirely."""
         if deps.event_sink is None:
             return None
-        run_id = state.get("run_id")
+        run_id = state["run_id"]
         seq = state.get("iteration", 0)
 
         async def emit(delta: str) -> None:
@@ -556,11 +560,11 @@ class AgentRuntime:
 
 
 __all__ = [
-    "AgentRuntime",
-    "RuntimeConfig",
     "AgentDefinition",
+    "AgentRuntime",
     "RunContext",
+    "RunResult",
+    "RuntimeConfig",
     "RuntimeDeps",
     "Step",
-    "RunResult",
 ]

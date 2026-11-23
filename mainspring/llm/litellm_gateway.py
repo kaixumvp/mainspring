@@ -3,8 +3,8 @@ import logging
 from collections.abc import AsyncIterator
 
 from mainspring._optional import require_optional
-from mainspring.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
 from mainspring.llm.structured import parse_structured
+from mainspring.ports import ChatChunk, LLMResponse, ToolCall, ToolCallDelta, Usage
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class LiteLLMGateway:
         try:
             kwargs["stream_options"] = {"include_usage": True}
             stream = await litellm.acompletion(**kwargs)
-        except Exception:  # noqa: BLE001 — some providers reject stream_options outright
+        except Exception:
             kwargs.pop("stream_options", None)
             stream = await litellm.acompletion(**kwargs)
 

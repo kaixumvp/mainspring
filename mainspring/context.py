@@ -43,7 +43,7 @@ class SlidingWindowContext:
             "role": "system",
             "content": f"[{cut - head} earlier messages omitted by context compaction]",
         }
-        return out[:head] + [marker] + out[cut:]
+        return [*out[:head], marker, *out[cut:]]
 
     def _truncate(self, message: dict) -> dict:
         if message.get("role") != "tool":

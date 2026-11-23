@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any, overload
 
 from pydantic import TypeAdapter, ValidationError, validate_call
 
@@ -53,7 +54,7 @@ class FunctionTool(BaseTool):
                 result = await asyncio.to_thread(self._wrapped, **kwargs)
         except ValidationError as exc:
             return ToolResult(success=False, output="", error=str(exc))
-        except Exception as exc:  # noqa: BLE001 — tool contract: failures become ToolResult
+        except Exception as exc:
             return ToolResult(success=False, output="", error=str(exc))
         if isinstance(result, ToolResult):
             return result
@@ -61,6 +62,29 @@ class FunctionTool(BaseTool):
             success=True,
             output=result if isinstance(result, (str, dict)) else str(result),
         )
+
+
+@overload
+def tool(fn: Callable[..., Any]) -> FunctionTool: ...
+
+
+@overload
+def tool(
+    fn: Callable[..., Any],
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    permission: str = "read",
+) -> FunctionTool: ...
+
+
+@overload
+def tool(
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    permission: str = "read",
+) -> Callable[[Callable[..., Any]], FunctionTool]: ...
 
 
 def tool(fn=None, *, name: str | None = None, description: str | None = None,

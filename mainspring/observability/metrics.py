@@ -41,4 +41,4 @@ class InMemoryMetrics:
 
 noop_metrics = NoopMetrics()
 
-__all__ = ["NoopMetrics", "InMemoryMetrics", "noop_metrics"]
+__all__ = ["InMemoryMetrics", "NoopMetrics", "noop_metrics"]

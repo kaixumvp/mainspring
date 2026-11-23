@@ -11,13 +11,13 @@ import asyncio
 import os
 import tempfile
 
+from _shared import ScriptedLLM, finish, tool_call
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.core.resilience import RetryPolicy
-from mainspring.llm.replay import ReplayGateway, RecordingGateway, dump_recording, load_recording
+from mainspring.llm.replay import RecordingGateway, ReplayGateway, dump_recording, load_recording
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.tools.registry import build_default_registry
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 def build_definition() -> AgentDefinition:

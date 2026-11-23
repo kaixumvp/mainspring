@@ -6,11 +6,11 @@
 
 import asyncio
 
+from _shared import ScriptedLLM, finish, tool_call
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.tools.registry import build_default_registry
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 async def main() -> None:

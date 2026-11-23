@@ -79,7 +79,7 @@ async def run_with_retry(
             raise CircuitOpenError("circuit breaker open")
         try:
             result = await fn()
-        except Exception:  # noqa: BLE001 — retry any transient failure, then re-raise
+        except Exception:
             if breaker is not None:
                 breaker.record_failure()
             if attempt >= policy.max_retries:

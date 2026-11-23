@@ -1,11 +1,13 @@
 import pytest
 
+from mainspring.observability import trace as trace_module
 from mainspring.observability.metrics import InMemoryMetrics, NoopMetrics
 from mainspring.observability.trace import Tracer, get_tracer
 
 
-# OpenTelemetry is not installed in the test env → Tracer degrades to no-op.
-def test_tracer_noop_when_otel_absent():
+# The no-op fallback must hold whether or not the host installed the observability extra.
+def test_tracer_noop_when_otel_absent(monkeypatch):
+    monkeypatch.setattr(trace_module, "_HAS_OTEL", False)
     t = Tracer()
     assert t.enabled is False
     assert t.current_trace_id() is None
@@ -36,9 +38,10 @@ def test_in_memory_metrics_records():
 @pytest.mark.asyncio
 async def test_runtime_records_metrics_and_redacts():
     from conftest import MockLLMGateway, build_default_plugins
+
     from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
     from mainspring.core.resilience import RetryPolicy
-    from mainspring.llm.base import LLMResponse, ToolCall, Usage
+    from mainspring.llm.base import LLMResponse, ToolCall
     from mainspring.security import Redactor
 
     llm = MockLLMGateway([

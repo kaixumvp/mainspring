@@ -20,9 +20,13 @@ import threading
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from mainspring.core.runtime import AgentRuntime, RunContext
+from mainspring.core.runtime import AgentRuntime, RunContext, RuntimeDeps
 from mainspring.devui.demo import DEMO_TASK, build_demo_definition, build_demo_deps
+
+if TYPE_CHECKING:
+    from mainspring.core.checkpointer import InMemoryCheckpointer
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
@@ -41,10 +45,10 @@ class DevUIServer:
         self.host = host
         self.port = port
         self.stream_delay = stream_delay
-        self._checkpointer = None  # built lazily on the loop thread
+        self._checkpointer: InMemoryCheckpointer | None = None  # built lazily on the loop thread
         self._runtime = AgentRuntime()
         self._definition = build_demo_definition()
-        self._deps_by_run: dict[str, object] = {}  # resume must reuse the run's scripted gateway
+        self._deps_by_run: dict[str, RuntimeDeps] = {}  # resume must reuse the run's scripted gateway
         self._deps_lock = threading.Lock()
         self._bus: queue.Queue = queue.Queue()
         self._subscribers: set[queue.Queue] = set()
@@ -61,7 +65,6 @@ class DevUIServer:
             return
         handler = self._make_handler()
         self._httpd = ThreadingHTTPServer((self.host, self.port), handler)
-        self._httpd.app = self
         self._httpd.daemon_threads = True
         self.port = self._httpd.server_address[1]
 
@@ -102,14 +105,14 @@ class DevUIServer:
             def log_message(self, format, *args):  # quiet, unless the app enables logging
                 pass
 
-            def do_GET(self):  # noqa: N802 — http.server API
+            def do_GET(self):
                 if self.path.startswith("/events"):
                     return self._serve_sse()
                 if self.path in ("/", "/index.html"):
                     return self._serve_static()
                 self.send_error(404)
 
-            def do_POST(self):  # noqa: N802 — http.server API
+            def do_POST(self):
                 body = self._read_body()
                 try:
                     payload = json.loads(body) if body else {}
@@ -165,7 +168,7 @@ class DevUIServer:
                             self.wfile.flush()
                             continue
                         payload = json.dumps(event, ensure_ascii=False, default=str)
-                        self.wfile.write(f"data: {payload}\n\n".encode("utf-8"))
+                        self.wfile.write(f"data: {payload}\n\n".encode())
                         self.wfile.flush()
                 except (BrokenPipeError, ConnectionResetError, OSError):
                     pass  # client went away
@@ -189,7 +192,7 @@ class DevUIServer:
                 )
                 try:
                     result = future.result(timeout=180)
-                except Exception as exc:  # noqa: BLE001 — report as 500, keep server alive
+                except Exception as exc:
                     return self._send_json(500, {"error": str(exc)})
                 if result.status != "awaiting_human":
                     with server._deps_lock:
@@ -211,7 +214,7 @@ class DevUIServer:
                 )
                 try:
                     result = future.result(timeout=180)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     return self._send_json(500, {"error": str(exc)})
                 if result.status != "awaiting_human":
                     with server._deps_lock:

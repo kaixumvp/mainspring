@@ -9,13 +9,13 @@
 
 import asyncio
 
+from _shared import ScriptedLLM, finish
+
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.memory.consolidator import Consolidator
 from mainspring.memory.manager import MemoryManager
 from mainspring.memory.reflect import Reflector
 from mainspring.ports import LongTermMemory, MemoryEntry, WorkingMemory
-
-from _shared import ScriptedLLM, finish, tool_call
 
 
 class InMemoryWorking(WorkingMemory):

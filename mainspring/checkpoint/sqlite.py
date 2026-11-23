@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import sqlite3
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from mainspring.checkpoint.codec import SCHEMA_VERSION, decode, encode
@@ -61,7 +61,7 @@ class SQLiteCheckpointer:
 
     async def save(self, run_id: str, state: dict) -> None:
         payload = encode(state)
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         def _save(conn) -> None:
             conn.execute(_UPSERT_SQL, (run_id, payload, SCHEMA_VERSION, now))
