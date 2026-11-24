@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>BrainMemory 验收仪表盘</title>
+<style>
+body{font:14px/1.6 system-ui,"Microsoft YaHei",sans-serif;max-width:1000px;margin:24px auto;padding:0 18px;color:#20242c;background:#f6f7f9}
+h1{font-size:20px} h2{font-size:16px;border-left:3px solid #d9a441;padding-left:8px;margin-top:28px}
+.card{background:#fff;border:1px solid #e3e6ec;border-radius:8px;padding:14px 18px;margin:10px 0}
+.bar-row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px}
+.bar-row .lab{width:150px;color:#5c6470;text-align:right}
+.bar-row .track{flex:1;height:16px;background:#eef0f4;border-radius:5px;position:relative;overflow:hidden}
+.bar-row .fill{position:absolute;top:0;bottom:0;left:0;border-radius:4px}
+.bar-row .num{width:300px;font-family:ui-monospace,monospace;font-size:12.5px}
+table{border-collapse:collapse;width:100%;font-size:13px} th,td{border:1px solid #e3e6ec;padding:5px 9px;text-align:left}
+th{background:#f0f2f6;color:#5c6470} td.num{text-align:right;font-family:ui-monospace,monospace}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12.5px;font-weight:500}
+.ok{background:#e3f5ea;color:#1e7a44} .no{background:#fdeaea;color:#b3392f}
+.note{color:#5c6470;font-size:12.5px;margin-top:6px}
+</style></head><body>
+<h1>BrainMemory 验收仪表盘（mainspring 分支 feature/memory-brain）</h1>
+<div class="note">2026-11-24 20:00:14 · 基准参数 T=30000、条目 900、热层 120、冷层价值 0.25 · 每档 3 个 seed</div>
+
+<h2>一、三个大白话数字：三档需求 × 相对 LRU 的效用增益</h2>
+<div class="card"><div class="bar-row"><span class="lab">平稳 Zipf</span><div class="track"><div class="fill" style="width:20.7%;background:#4c9aff"></div></div><span class="num">+2.40% · 热命中 0.850 vs LRU 0.788</span></div><div class="bar-row"><span class="lab">组级周期轮换</span><div class="track"><div class="fill" style="width:40.5%;background:#e06c5f"></div></div><span class="num">-4.69% · 热命中 0.862 vs LRU 0.884</span></div><div class="bar-row"><span class="lab">条目级周期回归</span><div class="track"><div class="fill" style="width:100.0%;background:#5ac48a"></div></div><span class="num">+11.57% · 热命中 0.633 vs LRU 0.501</span></div>
+<div class="note">效用 = (热命中 + 0.25×冷命中 − 0.40×整理槽位) / 查询数。冷层免费（=1）时 LRU 就是准最优，
+所以这套对照用 0.25 的冷层代价——真 agent 里冷层取回 = 重新读文件/塞上下文，值远小于 1。</div></div>
+
+<h2>二、收益分解：预测器逐项消融（phased）</h2>
+<div class="card"><div class="bar-row"><span class="lab">关时间风险预测</span><div class="track"><div class="fill" style="width:0.0%;background:#8b93a3"></div></div><span class="num">+0.00pp · 效用 0.6983</span></div><div class="bar-row"><span class="lab">关主题内份额</span><div class="track"><div class="fill" style="width:5.6%;background:#b08ae0"></div></div><span class="num">-0.96pp · 效用 0.6916</span></div><div class="bar-row"><span class="lab">全关（→FIFO）</span><div class="track"><div class="fill" style="width:100.0%;background:#e06c5f"></div></div><span class="num">-17.03pp · 效用 0.5794</span></div><div class="bar-row"><span class="lab">加条目级风险</span><div class="track"><div class="fill" style="width:2.3%;background:#4c9aff"></div></div><span class="num">+0.39pp · 效用 0.7010</span></div>
+<div class="note">memory-math 实测结论：收益全部来自「主题内份额 × O」的驱逐排序；时间风险预测 0.00pp；
+全关退化 FIFO 是 −17pp 量级。本栏验证移植没把机制搬丢。</div></div>
+
+<h2>三、性能计数器（本进程实测，事件时钟）</h2>
+<div class="card"><table>
+<tr><th>操作</th><th>次数</th><th>p50</th><th>p99</th><th>均值</th><th>最大</th><th>QPS</th></tr>
+<tr><td>query（热/冷/未中）</td><td class="num">29996</td><td class="num">0.0184ms</td><td class="num">1.2772ms</td><td class="num">0.2099ms</td><td class="num">55.4209ms</td><td class="num">4764.9</td></tr>
+<tr><td>insert（写入+驱逐）</td><td class="num">900</td><td class="num">0.3838ms</td><td class="num">1.3248ms</td><td class="num">0.4385ms</td><td class="num">1.6756ms</td><td class="num">2280.3</td></tr>
+<tr><td>consolidate（整理批次）</td><td class="num">99</td><td class="num">2.7427ms</td><td class="num">9.2687ms</td><td class="num">2.9609ms</td><td class="num">9.2687ms</td><td class="num">337.7</td></tr>
+</table>
+<div class="note">性能验收线：query p99 &lt; 2ms、insert p99 &lt; 10ms →
+<span class="badge ok">通过</span>
+（纯 Python 进程内；真实部署接 embedding/ANN 时，延迟大头在宿主注入的 embedder 上，不在本策略。）</div></div>
+
+<h2>四、自证非套壳（anti-FIFO-shell）</h2>
+<div class="card"><table>
+<tr><th>指标</th><th>值</th><th>判读</th></tr>
+<tr><td>tier 分位 p10/p50/p90</td><td class="num">[0.0, 0.0, 0.24]</td><td>真塌成 FIFO 时 tier 恒 0</td></tr>
+<tr><td>tier 跨度</td><td class="num">7.0</td><td>&gt;1 才算有层级状态</td></tr>
+<tr><td>M' 分位 p10/p50/p90</td><td class="num">[0.05, 0.803, 1.0]</td><td>FIFO 壳会早早饱和到同一值</td></tr>
+<tr><td>热层/冷层条目</td><td class="num">120 / 780</td><td>驱逐在发生、归档在积累</td></tr>
+</table></div>
+
+<h2>五、验收裁决</h2>
+<div class="card"><table>
+<tr><th>regime</th><th>相对 LRU（3 seed 均值）</th><th>达到（效用 ≥ LRU）</th></tr>
+<tr><td>stationary</td><td class="num">+2.40%</td><td><span class="badge ok">是</span></td></tr>
+<tr><td>cyclic</td><td class="num">-4.69%</td><td><span class="badge no">否</span></td></tr>
+<tr><td>phased</td><td class="num">+11.57%（热命中比 1.26×）</td><td><span class="badge ok">是</span></td></tr>
+</table>
+<div class="note" style="margin-top:8px">「效果突出」= phased 热命中 ≥ 1.1×LRU 且跨 seed 全胜且增益 ≥ 5% →
+<span class="badge ok">达成</span>
+· 诚实预期：平稳场景 ≈ LRU 是设计内的（近因本就是复用概率的极好代理），模型买的是非平稳/周期回归那一栏。</div></div>
+</body></html>

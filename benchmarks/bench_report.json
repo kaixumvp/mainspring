@@ -1,0 +1,658 @@
+{
+ "generated_at": "2026-11-24 20:00:14",
+ "branch": "feature/memory-brain",
+ "acceptance_lines": {
+  "reach": "同一 regime 下 memory-model 的 utility ≥ LRU（成本已内嵌在 utility 里）",
+  "outstanding": "phased 下热命中 ≥ 1.1×LRU，且 utility 跨 3 个 seed 全胜",
+  "perf": "query p99 < 2ms、insert p99 < 10ms（纯 Python 进程内，事件时钟）"
+ },
+ "verdicts": {
+  "stationary": {
+   "gain_pct_mean": 2.4,
+   "hot_model": 0.8501,
+   "hot_lru": 0.7881,
+   "hot_ratio": 1.079,
+   "utility_model": 0.8613,
+   "utility_lru": 0.8411,
+   "reach": true,
+   "win_every_seed": true
+  },
+  "cyclic": {
+   "gain_pct_mean": -4.69,
+   "hot_model": 0.8619,
+   "hot_lru": 0.8839,
+   "hot_ratio": 0.975,
+   "utility_model": 0.8701,
+   "utility_lru": 0.9129,
+   "reach": false,
+   "win_every_seed": false
+  },
+  "phased": {
+   "gain_pct_mean": 11.57,
+   "hot_model": 0.6328,
+   "hot_lru": 0.5012,
+   "hot_ratio": 1.263,
+   "utility_model": 0.6983,
+   "utility_lru": 0.6259,
+   "reach": true,
+   "win_every_seed": true,
+   "outstanding": true
+  },
+  "perf": {
+   "query_p99_ms": 1.2772,
+   "insert_p99_ms": 1.3248,
+   "query_qps": 4764.9,
+   "insert_qps": 2280.3,
+   "pass": true
+  }
+ },
+ "results": {
+  "stationary": [
+   {
+    "seed": 7,
+    "gain_vs_LRU_pct": 2.34,
+    "policies": {
+     "LRU": {
+      "queries": 29994,
+      "hot_rate": 0.7883,
+      "archive_rate": 0.2117,
+      "total_recall": 1.0,
+      "utility": 0.8412,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6349
+     },
+     "FIFO": {
+      "queries": 29994,
+      "hot_rate": 0.7392,
+      "archive_rate": 0.2608,
+      "total_recall": 1.0,
+      "utility": 0.8044,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 7822
+     },
+     "fixed-TTL": {
+      "queries": 29994,
+      "hot_rate": 0.7413,
+      "archive_rate": 0.2587,
+      "total_recall": 1.0,
+      "utility": 0.806,
+      "slots_per_1k_q": 0.0,
+      "evictions": 1,
+      "promotions": 7758
+     },
+     "recency-decay": {
+      "queries": 29994,
+      "hot_rate": 0.7883,
+      "archive_rate": 0.2117,
+      "total_recall": 1.0,
+      "utility": 0.8412,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6350
+     },
+     "memory-model": {
+      "queries": 29994,
+      "hot_rate": 0.8497,
+      "archive_rate": 0.1503,
+      "total_recall": 1.0,
+      "utility": 0.8609,
+      "slots_per_1k_q": 65.91,
+      "evictions": 5288,
+      "promotions": 4508
+     }
+    }
+   },
+   {
+    "seed": 8,
+    "gain_vs_LRU_pct": 2.45,
+    "policies": {
+     "LRU": {
+      "queries": 29984,
+      "hot_rate": 0.79,
+      "archive_rate": 0.21,
+      "total_recall": 1.0,
+      "utility": 0.8425,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6297
+     },
+     "FIFO": {
+      "queries": 29984,
+      "hot_rate": 0.7436,
+      "archive_rate": 0.2564,
+      "total_recall": 1.0,
+      "utility": 0.8077,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 7687
+     },
+     "fixed-TTL": {
+      "queries": 29984,
+      "hot_rate": 0.7463,
+      "archive_rate": 0.2537,
+      "total_recall": 1.0,
+      "utility": 0.8097,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 7607
+     },
+     "recency-decay": {
+      "queries": 29984,
+      "hot_rate": 0.79,
+      "archive_rate": 0.21,
+      "total_recall": 1.0,
+      "utility": 0.8425,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6298
+     },
+     "memory-model": {
+      "queries": 29984,
+      "hot_rate": 0.8525,
+      "archive_rate": 0.1475,
+      "total_recall": 1.0,
+      "utility": 0.8631,
+      "slots_per_1k_q": 65.5,
+      "evictions": 5204,
+      "promotions": 4424
+     }
+    }
+   },
+   {
+    "seed": 9,
+    "gain_vs_LRU_pct": 2.42,
+    "policies": {
+     "LRU": {
+      "queries": 29996,
+      "hot_rate": 0.7859,
+      "archive_rate": 0.2141,
+      "total_recall": 1.0,
+      "utility": 0.8395,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6421
+     },
+     "FIFO": {
+      "queries": 29996,
+      "hot_rate": 0.7361,
+      "archive_rate": 0.2639,
+      "total_recall": 1.0,
+      "utility": 0.8021,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 7916
+     },
+     "fixed-TTL": {
+      "queries": 29996,
+      "hot_rate": 0.7396,
+      "archive_rate": 0.2604,
+      "total_recall": 1.0,
+      "utility": 0.8047,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 7810
+     },
+     "recency-decay": {
+      "queries": 29996,
+      "hot_rate": 0.7859,
+      "archive_rate": 0.2141,
+      "total_recall": 1.0,
+      "utility": 0.8394,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 6422
+     },
+     "memory-model": {
+      "queries": 29996,
+      "hot_rate": 0.8482,
+      "archive_rate": 0.1518,
+      "total_recall": 1.0,
+      "utility": 0.8598,
+      "slots_per_1k_q": 66.01,
+      "evictions": 5332,
+      "promotions": 4552
+     }
+    }
+   }
+  ],
+  "cyclic": [
+   {
+    "seed": 7,
+    "gain_vs_LRU_pct": -4.78,
+    "policies": {
+     "LRU": {
+      "queries": 29994,
+      "hot_rate": 0.8826,
+      "archive_rate": 0.1174,
+      "total_recall": 1.0,
+      "utility": 0.912,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3520
+     },
+     "FIFO": {
+      "queries": 29994,
+      "hot_rate": 0.8494,
+      "archive_rate": 0.1506,
+      "total_recall": 1.0,
+      "utility": 0.8871,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 4516
+     },
+     "fixed-TTL": {
+      "queries": 29994,
+      "hot_rate": 0.857,
+      "archive_rate": 0.143,
+      "total_recall": 1.0,
+      "utility": 0.8928,
+      "slots_per_1k_q": 0.0,
+      "evictions": 3,
+      "promotions": 4289
+     },
+     "recency-decay": {
+      "queries": 29994,
+      "hot_rate": 0.8826,
+      "archive_rate": 0.1174,
+      "total_recall": 1.0,
+      "utility": 0.912,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3520
+     },
+     "memory-model": {
+      "queries": 29994,
+      "hot_rate": 0.8598,
+      "archive_rate": 0.1402,
+      "total_recall": 1.0,
+      "utility": 0.8684,
+      "slots_per_1k_q": 66.01,
+      "evictions": 4985,
+      "promotions": 4205
+     }
+    }
+   },
+   {
+    "seed": 8,
+    "gain_vs_LRU_pct": -4.72,
+    "policies": {
+     "LRU": {
+      "queries": 29984,
+      "hot_rate": 0.8868,
+      "archive_rate": 0.1132,
+      "total_recall": 1.0,
+      "utility": 0.9151,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3395
+     },
+     "FIFO": {
+      "queries": 29984,
+      "hot_rate": 0.8528,
+      "archive_rate": 0.1472,
+      "total_recall": 1.0,
+      "utility": 0.8896,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 4414
+     },
+     "fixed-TTL": {
+      "queries": 29984,
+      "hot_rate": 0.8605,
+      "archive_rate": 0.1395,
+      "total_recall": 1.0,
+      "utility": 0.8953,
+      "slots_per_1k_q": 0.0,
+      "evictions": 3,
+      "promotions": 4184
+     },
+     "recency-decay": {
+      "queries": 29984,
+      "hot_rate": 0.8868,
+      "archive_rate": 0.1132,
+      "total_recall": 1.0,
+      "utility": 0.9151,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3395
+     },
+     "memory-model": {
+      "queries": 29984,
+      "hot_rate": 0.8642,
+      "archive_rate": 0.1358,
+      "total_recall": 1.0,
+      "utility": 0.8719,
+      "slots_per_1k_q": 65.53,
+      "evictions": 4853,
+      "promotions": 4073
+     }
+    }
+   },
+   {
+    "seed": 9,
+    "gain_vs_LRU_pct": -4.58,
+    "policies": {
+     "LRU": {
+      "queries": 29996,
+      "hot_rate": 0.8823,
+      "archive_rate": 0.1177,
+      "total_recall": 1.0,
+      "utility": 0.9117,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3530
+     },
+     "FIFO": {
+      "queries": 29996,
+      "hot_rate": 0.8468,
+      "archive_rate": 0.1532,
+      "total_recall": 1.0,
+      "utility": 0.8851,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 4595
+     },
+     "fixed-TTL": {
+      "queries": 29996,
+      "hot_rate": 0.8572,
+      "archive_rate": 0.1428,
+      "total_recall": 1.0,
+      "utility": 0.8929,
+      "slots_per_1k_q": 0.0,
+      "evictions": 4,
+      "promotions": 4283
+     },
+     "recency-decay": {
+      "queries": 29996,
+      "hot_rate": 0.8823,
+      "archive_rate": 0.1177,
+      "total_recall": 1.0,
+      "utility": 0.9117,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 3532
+     },
+     "memory-model": {
+      "queries": 29996,
+      "hot_rate": 0.8618,
+      "archive_rate": 0.1382,
+      "total_recall": 1.0,
+      "utility": 0.8699,
+      "slots_per_1k_q": 66.01,
+      "evictions": 4926,
+      "promotions": 4146
+     }
+    }
+   }
+  ],
+  "phased": [
+   {
+    "seed": 7,
+    "gain_vs_LRU_pct": 11.64,
+    "policies": {
+     "LRU": {
+      "queries": 29994,
+      "hot_rate": 0.5007,
+      "archive_rate": 0.4993,
+      "total_recall": 1.0,
+      "utility": 0.6255,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 14976
+     },
+     "FIFO": {
+      "queries": 29994,
+      "hot_rate": 0.4744,
+      "archive_rate": 0.5256,
+      "total_recall": 1.0,
+      "utility": 0.6058,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15765
+     },
+     "fixed-TTL": {
+      "queries": 29994,
+      "hot_rate": 0.4739,
+      "archive_rate": 0.5261,
+      "total_recall": 1.0,
+      "utility": 0.6054,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15779
+     },
+     "recency-decay": {
+      "queries": 29994,
+      "hot_rate": 0.5006,
+      "archive_rate": 0.4994,
+      "total_recall": 1.0,
+      "utility": 0.6255,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 14978
+     },
+     "memory-model": {
+      "queries": 29994,
+      "hot_rate": 0.6329,
+      "archive_rate": 0.3671,
+      "total_recall": 1.0,
+      "utility": 0.6983,
+      "slots_per_1k_q": 65.81,
+      "evictions": 11791,
+      "promotions": 11011
+     }
+    }
+   },
+   {
+    "seed": 8,
+    "gain_vs_LRU_pct": 11.26,
+    "policies": {
+     "LRU": {
+      "queries": 29984,
+      "hot_rate": 0.5085,
+      "archive_rate": 0.4915,
+      "total_recall": 1.0,
+      "utility": 0.6314,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 14738
+     },
+     "FIFO": {
+      "queries": 29984,
+      "hot_rate": 0.4813,
+      "archive_rate": 0.5187,
+      "total_recall": 1.0,
+      "utility": 0.6109,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15554
+     },
+     "fixed-TTL": {
+      "queries": 29984,
+      "hot_rate": 0.4807,
+      "archive_rate": 0.5193,
+      "total_recall": 1.0,
+      "utility": 0.6105,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15570
+     },
+     "recency-decay": {
+      "queries": 29984,
+      "hot_rate": 0.5085,
+      "archive_rate": 0.4915,
+      "total_recall": 1.0,
+      "utility": 0.6314,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 14737
+     },
+     "memory-model": {
+      "queries": 29984,
+      "hot_rate": 0.6382,
+      "archive_rate": 0.3618,
+      "total_recall": 1.0,
+      "utility": 0.7025,
+      "slots_per_1k_q": 65.4,
+      "evictions": 11628,
+      "promotions": 10848
+     }
+    }
+   },
+   {
+    "seed": 9,
+    "gain_vs_LRU_pct": 11.81,
+    "policies": {
+     "LRU": {
+      "queries": 29996,
+      "hot_rate": 0.4945,
+      "archive_rate": 0.5055,
+      "total_recall": 1.0,
+      "utility": 0.6208,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15164
+     },
+     "FIFO": {
+      "queries": 29996,
+      "hot_rate": 0.4669,
+      "archive_rate": 0.5331,
+      "total_recall": 1.0,
+      "utility": 0.6001,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15992
+     },
+     "fixed-TTL": {
+      "queries": 29996,
+      "hot_rate": 0.4663,
+      "archive_rate": 0.5337,
+      "total_recall": 1.0,
+      "utility": 0.5997,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 16010
+     },
+     "recency-decay": {
+      "queries": 29996,
+      "hot_rate": 0.4945,
+      "archive_rate": 0.5055,
+      "total_recall": 1.0,
+      "utility": 0.6208,
+      "slots_per_1k_q": 0.0,
+      "evictions": 0,
+      "promotions": 15164
+     },
+     "memory-model": {
+      "queries": 29996,
+      "hot_rate": 0.6274,
+      "archive_rate": 0.3726,
+      "total_recall": 1.0,
+      "utility": 0.6941,
+      "slots_per_1k_q": 66.01,
+      "evictions": 11958,
+      "promotions": 11178
+     }
+    }
+   }
+  ]
+ },
+ "ablation": {
+  "full": {
+   "utility": 0.6983,
+   "hot_rate": 0.6329,
+   "gain_vs_LRU_pct": 11.64,
+   "delta_vs_full_pct": 0.0
+  },
+  "no_share": {
+   "utility": 0.6916,
+   "hot_rate": 0.6239,
+   "gain_vs_LRU_pct": 10.57,
+   "delta_vs_full_pct": -0.96
+  },
+  "no_topic_timing": {
+   "utility": 0.6983,
+   "hot_rate": 0.6329,
+   "gain_vs_LRU_pct": 11.64,
+   "delta_vs_full_pct": 0.0
+  },
+  "no_predictor": {
+   "utility": 0.5794,
+   "hot_rate": 0.4744,
+   "gain_vs_LRU_pct": -7.37,
+   "delta_vs_full_pct": -17.03
+  },
+  "item_hazard_added": {
+   "utility": 0.701,
+   "hot_rate": 0.6276,
+   "gain_vs_LRU_pct": 12.07,
+   "delta_vs_full_pct": 0.39
+  }
+ },
+ "diagnostics": {
+  "n_items": 900,
+  "hot": 120,
+  "archive": 780,
+  "tier_p10_p50_p90": [
+   0.0,
+   0.0,
+   0.24
+  ],
+  "tier_spread": 7.0,
+  "m_p10_p50_p90": [
+   0.05,
+   0.803,
+   1.0
+  ],
+  "m_mean": 0.703,
+  "tau_range": [
+   8.0,
+   17496.0
+  ],
+  "m_below_target": 112,
+  "hot_per_topic": {
+   "0": 11,
+   "1": 13,
+   "2": 12,
+   "3": 16,
+   "4": 12,
+   "5": 14,
+   "6": 14,
+   "7": 15,
+   "8": 13
+  },
+  "hot_hit": 18818,
+  "archive_hit": 11178,
+  "miss": 0,
+  "slots": 1980,
+  "evictions": 11958,
+  "promotions": 11178
+ },
+ "perf": {
+  "insert": {
+   "ops": 900,
+   "p50_ms": 0.3838,
+   "p99_ms": 1.3248,
+   "mean_ms": 0.4385,
+   "max_ms": 1.6756,
+   "qps": 2280.3
+  },
+  "query": {
+   "ops": 29996,
+   "p50_ms": 0.0184,
+   "p99_ms": 1.2772,
+   "mean_ms": 0.2099,
+   "max_ms": 55.4209,
+   "qps": 4764.9
+  },
+  "consolidate": {
+   "ops": 99,
+   "p50_ms": 2.7427,
+   "p99_ms": 9.2687,
+   "mean_ms": 2.9609,
+   "max_ms": 9.2687,
+   "qps": 337.7
+  }
+ }
+}
