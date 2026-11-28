@@ -51,9 +51,13 @@ async def main() -> None:
     second = await rt.run(definition, "计算 3*8+100", RunContext(run_id="r1"),
                           RuntimeDeps(llm=replay, retry=RetryPolicy(max_retries=0)))
 
+    same_steps = [(s.node, s.action) for s in first.steps] == [(s.node, s.action) for s in second.steps]
+    same_usage = first.token_usage == second.token_usage
     print("首次 status/result:", first.status, first.result)
     print("重放 status/result:", second.status, second.result)
-    print("是否可复现:", first.status == second.status and first.result == second.result)
+    print("步骤序列一致:", same_steps, "| token 用量一致:", same_usage)
+    print("是否完全可复现:", first.status == second.status and first.result == second.result
+          and same_steps and same_usage)
 
 
 if __name__ == "__main__":

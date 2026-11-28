@@ -3,6 +3,7 @@
 要点：
 - 框架只产出 RuntimeEvent 数据对象（无传输）；SSE/WebSocket 序列化是宿主的事。
 - 经 RuntimeDeps.event_sink 注入一个 async 回调，即可收到 run.started / step.completed / run.completed 等事件。
+- token 级 ``message.delta`` 的完整演示（含流式/非流式回退）见 ``streaming.py``。
 运行：``python example/events_streaming.py``
 """
 

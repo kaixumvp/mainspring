@@ -4,6 +4,7 @@
 - Skill 是 kind="skill" 的插件，用 `SkillManager.build(record)` 从持久化 record 构建。
 - flow/agent 需要宿主在 `SkillManager` 构造时注入 `run_flow` / `run_subagent` 回调。
 - LLM 看到的函数名带 `skill_` 前缀，避免与 tool 撞名。
+- 在 ``run_subagent`` 里真正启动子 Agent 的写法见 ``multi_agent.py``。
 运行：``python example/skills_example.py``
 """
 

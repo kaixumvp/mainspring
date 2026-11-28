@@ -43,7 +43,30 @@ class BusinessPermissionManager:
                                 resource_permission, requires_approval, approved)
 
 
+def decision_matrix() -> None:
+    """纯函数判定矩阵：不接 Agent 也能单独验证授权规则。"""
+    no_exec = PermissionContext()  # 没有任何能力位
+    admin = PermissionContext(is_admin=True)
+    reader = PermissionContext(permission_codes={"run:execute"})
+    granted = PermissionContext(
+        permission_codes={"run:execute"},
+        grant_keys={("tool", "delete_account", "allow")},
+    )
+    print("== check_permission 判定矩阵 ==")
+    print("无 run:execute        ->", check_permission(no_exec, "execute", "tool", "weather").value)
+    print("admin 绕过            ->", check_permission(admin, "execute", "tool", "delete_account", "admin").value)
+    print("write 无 grant        ->", check_permission(reader, "execute", "tool", "weather", "write").value)
+    print("admin 工具未审批      ->",
+          check_permission(granted, "execute", "tool", "delete_account", "admin").value)
+    print("admin 工具已审批      ->",
+          check_permission(granted, "execute", "tool", "delete_account", "admin",
+                           approved={"delete_account"}).value)
+
+
 async def main() -> None:
+    decision_matrix()
+    print()
+
     registry = PluginRegistry()
     registry.register_tool(DeleteAccountTool())
 
@@ -75,7 +98,10 @@ async def main() -> None:
     # 2. 人工审批通过 → 在同一 run 续跑（resume 复用 checkpoint）
     resumed = await rt.resume(definition, "run-1", ["delete_account"], deps)
     print("审批后续跑:", resumed.status, "结果:", resumed.result)
-    print("完整步骤:", [s.node for s in resumed.steps])
+    print("首次运行步骤:", [s.node for s in paused.steps])
+    print("续跑步骤:", [s.node for s in resumed.steps])
+    print("完整步骤（execute 因暂停→恢复重跑出现两次）:",
+          [s.node for s in paused.steps] + [s.node for s in resumed.steps])
 
 
 if __name__ == "__main__":

@@ -9,10 +9,11 @@
 
 import asyncio
 
-from _shared import ScriptedLLM, finish
+from _shared import ScriptedLLM, finish, tool_call
 
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
 from mainspring.knowledge import KnowledgePlugin
+from mainspring.plugins.registry import PluginRegistry
 from mainspring.ports import InvokeContext, KnowledgeEntry, LongTermMemory, MemoryEntry
 
 
@@ -57,7 +58,21 @@ async def main() -> None:
     print("KnowledgePlugin 函数名:", plugin.manifest.function_name)
     print("直接检索:", await plugin.invoke(InvokeContext(run_id="demo"), query="退款政策"))
 
-    # 2. 知识回退：长期记忆为空 → 计划阶段自动检索知识并回写
+    # 2. 交给 Agent：LLM 可以像调工具一样调用 knowledge_policy
+    kb_registry = PluginRegistry()
+    kb_registry.register(plugin)
+    kb_llm = ScriptedLLM([
+        tool_call("knowledge_policy", {"query": "退款政策"}),
+        finish("7 天无理由退货。"),
+    ])
+    kb_definition = AgentDefinition(model="mock-model", system_prompt="你是客服助手", plugins=kb_registry.all())
+    kb_result = await AgentRuntime().run(
+        kb_definition, "退款政策是什么？", RunContext(run_id="kb-plugin"), RuntimeDeps(llm=kb_llm)
+    )
+    kb_execute = next(s for s in kb_result.steps if s.node == "execute")
+    print("Agent 调用知识插件:", kb_result.result, "| execute 检索结果:", kb_execute.output["result"])
+
+    # 3. 知识回退：长期记忆为空 → 计划阶段自动检索知识并回写
     long_term = EmptyLongTerm()
     llm = ScriptedLLM([
         finish("7 天无理由退货。"),

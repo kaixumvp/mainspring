@@ -44,7 +44,7 @@ class Consolidator:
         candidates = self._extract(history)
         inserted = 0
         for content in candidates:
-            importance = self._reflector.score(content)
+            importance = await self._reflector.score(content)
             if importance < self._importance_threshold:
                 continue  # forgetting: drop low-value fragments before they reach memory
             try:

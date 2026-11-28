@@ -4,6 +4,7 @@
 - `CachingGateway`：相同 prompt 命中缓存，不再调底层 LLM。
 - `TieredRouter` + `message_length_classifier`：简单任务走小模型，复杂走大模型。
 - `RuntimeConfig.max_total_tokens`：运行期 token 预算，超限自动中止 run。
+- 另一种成本控制是请求级上下文预算，见 ``context_budget.py``。
 运行：``python example/cost.py``
 """
 
@@ -25,7 +26,7 @@ class Counting:
     def __init__(self):
         self.calls = 0
 
-    async def chat(self, messages, model=None, tools=None):
+    async def chat(self, messages, model=None, tools=None, schema=None):
         self.calls += 1
         return LLMResponse(content="ok", usage=Usage(total_tokens=1))
 
@@ -52,7 +53,7 @@ async def budget_demo() -> None:
     for tool in build_default_registry().all():
         registry.register_tool(tool)
 
-    # plan 单次消耗 15 token，超过预算 10 → run 中止
+    # 首次 decide 消耗 15 token，超过预算 10 → run 中止（Plan 默认关闭，未参与本次调用）
     llm = ScriptedLLM([
         LLMResponse(content='[{"description": "x"}]',
                     usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)),

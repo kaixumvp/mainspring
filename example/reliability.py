@@ -4,6 +4,7 @@
 - `run_with_retry` / `CircuitBreaker` 是独立原语，也可经 RuntimeDeps.retry / circuit_breaker 注入 Agent。
 - 运行时对每个节点应用 retry；工具瞬时失败会自动重试，持久失败则 run 置 failed。
 - `RuntimeConfig.timeout_seconds` 到点中止 run；`max_subagent_depth` 在 execute 前拒绝过深的子 Agent。
+- 多厂商 failover 与响应降级见 ``routing_fallback.py``。
 运行：``python example/reliability.py``
 """
 
@@ -83,7 +84,7 @@ async def timeout_in_agent() -> None:
     print("\n== Agent 超时 ==")
 
     class SlowLLM:
-        async def chat(self, messages, model=None, tools=None):
+        async def chat(self, messages, model=None, tools=None, schema=None):
             await asyncio.sleep(0.2)
             from mainspring.llm.base import LLMResponse, Usage
             return LLMResponse(content="", usage=Usage())

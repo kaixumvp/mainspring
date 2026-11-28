@@ -90,11 +90,12 @@ async def main() -> None:
         tool_call("skill_delegate", {"task": "分析用户反馈"}),
         finish("研究 Agent 已完成分析。"),
     ])
+    long_term = InMemoryLongTerm()
     deps = RuntimeDeps(
         llm=llm,
         permission_checker=PermissionManager(),
         permission_context=PermissionContext(permission_codes={"run:execute"}),
-        long_term_memory=InMemoryLongTerm(),
+        long_term_memory=long_term,
         knowledge=InMemoryKnowledge([KnowledgeEntry(id="k1", content="公司退款政策")]),
         event_sink=sink,
         checkpointer=InMemoryCheckpointer(),
@@ -109,6 +110,9 @@ async def main() -> None:
     print("result:", result.result)
     print("steps :", [s.node for s in result.steps])
     print("事件流 :", events)
+    # 长期记忆为空 → 知识回退检索并回写；这里从长期记忆侧验证确实发生了回写
+    recalled = await long_term.recall(None, "t1", "u1", "退款政策")
+    print("知识回退写入长期记忆:", [e.content for e in recalled])
 
 
 if __name__ == "__main__":

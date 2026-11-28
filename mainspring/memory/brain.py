@@ -30,11 +30,12 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from mainspring.ports import Embedder, LongTermMemory, MemoryEntry
+from mainspring.ports import Embedder, MemoryEntry
 
 
 def _clamp(x: float, lo: float, hi: float) -> float:
@@ -57,7 +58,6 @@ class ReusePredictor:
 
     def __init__(self, n_topics: int, halflife: float = 3000.0, bins: int = 16,
                  tmin: float = 1.0, tmax: float = 1e5):
-        self.n = n_topics
         self.halflife = halflife
         self.bins = bins
         self.tmin = tmin
@@ -67,12 +67,21 @@ class ReusePredictor:
         self.seen = [0] * n_topics
         self.hist = [[0.0] * bins for _ in range(n_topics)]
 
+    def _ensure(self, topic: int) -> None:
+        """自动归簇会动态开出新 topic，预测器数组随需扩容。"""
+        while len(self.rate) <= topic:
+            self.rate.append(0.0)
+            self.last.append(-1.0)
+            self.seen.append(0)
+            self.hist.append([0.0] * self.bins)
+
     def _bin(self, dt: float) -> int:
         if dt <= self.tmin:
             return 0
         return min(self.bins - 1, int(math.log(dt / self.tmin) / self.span * self.bins))
 
     def observe(self, topic: int, t: float) -> None:
+        self._ensure(topic)
         self.seen[topic] += 1
         if self.last[topic] < 0.0:
             self.rate[topic] = 1.0
@@ -95,6 +104,7 @@ class ReusePredictor:
 
     def return_prob(self, topic: int, t: float, lookahead: float) -> float:
         """P(lookahead 内回访 | 到现在已经 age 没回访) = 尾概率之比。"""
+        self._ensure(topic)
         if self.last[topic] < 0.0:
             return 0.0
         alive, soon = self.tail(topic, t - self.last[topic], lookahead)
@@ -143,6 +153,7 @@ class BrainConfig:
     use_share: bool = True
     fidelity: float = 0.70
     promote_p: float = 0.30
+    archive_budget: int = 100000  # 冷层上限，超了按最后想起时间淘汰（0=不限）
 
     def top_tau(self) -> float:
         return self.ladder_base * self.rho ** self.n_tiers
@@ -166,6 +177,7 @@ class BrainItem:
     user_id: str | None = None
     session_id: str | None = None
     created_at: datetime | None = None
+    vec: list[float] | None = None
 
     def tau(self, cfg: BrainConfig) -> float:
         return cfg.ladder_base * cfg.rho ** self.tier
@@ -179,8 +191,9 @@ class BrainItem:
 
 # ---------------------------------------------------------------- 离线降级 embedding
 
-def hash_embed(text: str, dim: int = 128) -> list[float]:
-    """零依赖确定性 embedding：字符 n-gram 特征哈希 + L2 归一化。
+def hash_embed(text: str, dim: int = 512) -> list[float]:
+    """零依赖确定性 embedding：中文按字二元组、ASCII 按词与字符三元组，
+    特征哈希 + L2 归一化。两条提取通道分开，混合中英字符串也能正常重叠。
 
     仅用于离线/无宿主 embedding 的演示与基准冒烟；生产请注入 ports.Embedder。
     md5 派生符号保证跨进程稳定（不用内置 hash()——它受 PYTHONHASHSEED 影响）。
@@ -190,10 +203,11 @@ def hash_embed(text: str, dim: int = 128) -> list[float]:
     if not s:
         return v
     grams: list[str] = []
-    if any(c.isascii() and c.isalpha() for c in s):
-        grams = ["".join(t) for t in zip(s, s[1:], s[2:])]
-    else:
-        grams = ["".join(t) for t in zip(s, s[1:])]
+    cjk = [c for c in s if "\u4e00" <= c <= "\u9fff"]
+    grams.extend("".join(t) for t in zip(cjk, cjk[1:]))
+    grams.extend(re.findall(r"[a-z0-9]+", s))
+    grams.extend("".join(t) for t in zip(s, s[1:], s[2:])
+                 if all(c.isascii() and c.isalnum() for c in t))
     for g in grams:
         h = int(hashlib.md5(g.encode("utf-8")).hexdigest()[:8], 16)
         v[h % dim] += 1.0 if (h >> 31) & 1 else -1.0
@@ -221,7 +235,6 @@ class BrainMemory:
                  embedder: Embedder | None = None, seed: int = 0) -> None:
         self.cfg = cfg or BrainConfig()
         self.pred = ReusePredictor(n_topics, self.cfg.topic_halflife)
-        self.n_topics = n_topics
         self.n_keys = 0
         self.hot: dict[str, BrainItem] = {}
         self.archive: dict[str, BrainItem] = {}
@@ -235,6 +248,13 @@ class BrainMemory:
         self.stats = {"hot_hit": 0, "archive_hit": 0, "miss": 0,
                       "slots": 0, "evictions": 0, "promotions": 0}
         self._lat: dict[str, list[int]] = {"insert": [], "query": [], "consolidate": []}
+        self._lat_cap = 10000
+
+    def _lat_append(self, op: str, ns: int) -> None:
+        lst = self._lat[op]
+        lst.append(ns)
+        if len(lst) > self._lat_cap:
+            del lst[: len(lst) - self._lat_cap]
 
     # ---- 门面时钟与元数据 --------------------------------------------------
 
@@ -260,7 +280,7 @@ class BrainMemory:
             self._hot_add(it)
         self.hot[key] = it
         self._ensure_space(t)
-        self._lat["insert"].append(time.perf_counter_ns() - t0)
+        self._lat_append("insert",time.perf_counter_ns() - t0)
 
     def query_key(self, key: str, t: float, topic: int) -> str:
         t0 = time.perf_counter_ns()
@@ -268,7 +288,7 @@ class BrainMemory:
         if it is not None:
             self._touch(it, t)
             self.stats["hot_hit"] += 1
-            self._lat["query"].append(time.perf_counter_ns() - t0)
+            self._lat_append("query",time.perf_counter_ns() - t0)
             return "hot"
         it = self.archive.get(key)
         if it is not None:
@@ -280,11 +300,11 @@ class BrainMemory:
             self.stats["archive_hit"] += 1
             self.stats["promotions"] += 1
             self._ensure_space(t)
-            self._lat["query"].append(time.perf_counter_ns() - t0)
+            self._lat_append("query",time.perf_counter_ns() - t0)
             return "archive"
         self.pred.observe(topic, t)
         self.stats["miss"] += 1
-        self._lat["query"].append(time.perf_counter_ns() - t0)
+        self._lat_append("query",time.perf_counter_ns() - t0)
         return "miss"
 
     def consolidate_now(self, t: float, budget: int) -> int:
@@ -306,12 +326,14 @@ class BrainMemory:
         if used:
             self.stats["slots"] += used
             self._ensure_space(t)
-        self._lat["consolidate"].append(time.perf_counter_ns() - t0)
+        self._lat_append("consolidate",time.perf_counter_ns() - t0)
         return used
 
     # ---- 内部机制（与 memory-math 同式） -----------------------------------
 
     def _hot_add(self, it: BrainItem) -> None:
+        while len(self.topic_in_hot) <= it.topic:
+            self.topic_in_hot.append(0)
         self.topic_in_hot[it.topic] += 1
 
     def _hot_del(self, it: BrainItem) -> None:
@@ -404,8 +426,17 @@ class BrainMemory:
             del self.hot[worst.key]
             self._hot_del(worst)
             worst.archived = True
+            worst.t_touch = t  # 入冷时间戳：修剪时按此排序（最久没被想起的先淘汰）
             self.archive[worst.key] = worst
             self.stats["evictions"] += 1
+        if self.cfg.archive_budget > 0:
+            self._trim_cold(t)
+
+    def _trim_cold(self, t: float) -> None:
+        """冷层修剪：超上限时按 t_touch 淘汰最久没被想起的条目（模仿长期遗忘）。"""
+        while len(self.archive) > self.cfg.archive_budget:
+            oldest = min(self.archive.values(), key=lambda it: it.t_touch)
+            del self.archive[oldest.key]
 
     # ---- 诊断 ---------------------------------------------------------------
 
@@ -436,7 +467,8 @@ class BrainMemory:
         out: dict[str, dict] = {}
         for op, samples in self._lat.items():
             if not samples:
-                out[op] = {"ops": 0, "p50_ms": 0.0, "p99_ms": 0.0, "mean_ms": 0.0, "max_ms": 0.0}
+                out[op] = {"ops": 0, "p50_ms": 0.0, "p99_ms": 0.0, "mean_ms": 0.0,
+                           "max_ms": 0.0, "qps": 0.0}
                 continue
             s = sorted(samples)
             ms = [x / 1e6 for x in s]
@@ -471,9 +503,8 @@ class BrainMemory:
                 best_t, best_s = i, sim
         if best_t < 0:
             self._topic_centers.append(vec[:])
-            self.n_topics = len(self._topic_centers)
             self.topic_in_hot.append(0)
-            return self.n_topics - 1
+            return len(self._topic_centers) - 1
         c = self._topic_centers[best_t]
         for j in range(len(c)):
             c[j] = 0.9 * c[j] + 0.1 * vec[j]
@@ -483,17 +514,20 @@ class BrainMemory:
                   session_id: str | None, content: str,
                   importance: float = 0.5, confidence: float = 0.5,
                   topic: int | None = None) -> str:
-        """写入：同内容幂等（返回既有 id），显式 topic 优先，否则自动归簇。"""
+        """写入：同用户同内容幂等（返回既有 id），不同用户同内容各自存储；
+        显式 topic 优先，否则按内容自动归簇（归簇映射是内容级全局缓存）。"""
         t0 = time.perf_counter_ns()
-        key = self._content_key(content)
+        uid = user_id or ""
+        chash = self._content_key(content)
+        key = f"user:{uid}:{chash}"
         t = self._advance()
         if topic is None:
-            if key in self._topic_by_key:
-                topic = self._topic_by_key[key]
+            if chash in self._topic_by_key:
+                topic = self._topic_by_key[chash]
             else:
                 (vec,) = await self._embed([content])
                 topic = self._assign_topic(content, vec)
-                self._topic_by_key[key] = topic
+                self._topic_by_key[chash] = topic
         if key in self.hot or key in self.archive:
             return key
         it = BrainItem(key=key, content=content, topic=topic, m=self.cfg.m_init,
@@ -504,21 +538,27 @@ class BrainMemory:
         self._hot_add(it)
         self.hot[key] = it
         self._ensure_space(t)
-        self._lat["insert"].append(time.perf_counter_ns() - t0)
+        self._lat_append("insert",time.perf_counter_ns() - t0)
         return key
 
     async def recall(self, db, tenant_id: str, user_id: str | None,
                      query: str, top_k: int = 5) -> list[MemoryEntry]:
-        """语义召回：embedding 相似度扫描热层+冷层，命中者走晋升与统计。
+        """语义召回：按 user_id 隔离扫描热层+冷层，命中者走晋升与统计。
 
-        v1 是线性扫描（热层 ≤hot_budget 条 + 冷层全量）——生产规模请换 ANN，
-        这就是端口留缝的原因。返回按相似度降序。
+        隔离语义：门面写入的条目一律带 user_id，严格只对该用户可见；
+        引擎路径插入的条目（无 user_id）视为未标属主、对所有召回可见——
+        基准/测试走引擎路径，业务走门面路径。
+        v1 是线性扫描（热层 ≤hot_budget 条 + 冷层全量）——生产规模请换 ANN。
         """
         (qvec,) = await self._embed([query])
         scored: list[tuple[float, BrainItem]] = []
         for it in self.hot.values():
+            if it.user_id and it.user_id != user_id:
+                continue
             scored.append((await self._sim(it, qvec), it))
         for it in self.archive.values():
+            if it.user_id and it.user_id != user_id:
+                continue
             scored.append((await self._sim(it, qvec), it))
         scored.sort(key=lambda x: -x[0])
         t = self._advance()
@@ -537,10 +577,15 @@ class BrainMemory:
         return _cosine(qvec, await self._item_vec(it))
 
     async def _item_vec(self, it: BrainItem) -> list[float]:
+        """条目向量缓存：云 API 按调用计费，内容不可变，每条只算一次。"""
+        if it.vec is not None:
+            return it.vec
         if self.embedder is None:
-            return hash_embed(it.content)
-        vecs = await self.embedder.embed([it.content])
-        return vecs[0]
+            it.vec = hash_embed(it.content)
+        else:
+            vecs = await self.embedder.embed([it.content])
+            it.vec = vecs[0]
+        return it.vec
 
     async def consolidate(self, db, budget: int = 20) -> int:
         """热层维护：跌破 target_r 的条目按价值重放。宿主可在会话结束后调度。"""

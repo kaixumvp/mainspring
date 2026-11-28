@@ -36,7 +36,7 @@ async def main() -> None:
 
     print("status:", result.status)          # completed
     print("result:", result.result)          # 3*8+100 = 124
-    print("steps :", [s.node for s in result.steps])   # plan → decide → execute → observe → decide
+    print("steps :", [s.node for s in result.steps])   # decide → execute → observe → decide（Plan 默认关闭）
     print("usage :", result.token_usage)
 
 

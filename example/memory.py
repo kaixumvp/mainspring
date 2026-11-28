@@ -4,6 +4,7 @@
 - WorkingMemory（短期，会话内）→ Consolidator（固化：抽取 + reflect 评分 + 相似去重 + 遗忘阈值）→ LongTermMemory（长期）。
 - MemoryManager 是门面；Agent 通过 RuntimeDeps.long_term_memory 在计划阶段召回记忆（memory_ctx）。
 - 这里用内存版实现演示；生产换成 Redis / pgvector 即可（协议不变）。
+- 向量化与相似度去重见 ``embedding.py``。
 运行：``python example/memory.py``
 """
 
@@ -47,8 +48,15 @@ class InMemoryLongTerm(LongTermMemory):
         return f"m{self._seq}"
 
     async def recall(self, db, tenant_id, user_id, query, top_k=5) -> list[MemoryEntry]:
-        # 简化：全量返回以演示注入；生产用 embedding 相似度检索
-        return self._items[:top_k]
+        # 简化：字符重叠度代替 embedding 相似度；生产用向量检索。
+        # similarity 必须回填，Consolidator 的相似去重与运行时“是否充足”都依赖它。
+        def similarity(content: str) -> float:
+            query_chars = set(query)
+            return len(query_chars & set(content)) / len(query_chars) if query_chars else 0.0
+
+        entries = [e.model_copy(update={"similarity": similarity(e.content)}) for e in self._items]
+        entries.sort(key=lambda e: e.similarity or 0.0, reverse=True)
+        return entries[:top_k]
 
 
 async def main() -> None:
@@ -62,10 +70,18 @@ async def main() -> None:
     await manager.write("s1", {"role": "assistant", "content": "好的，已记住"})
     print("短期历史:", await manager.get_history("s1"))
 
-    # 2. 固化到长期：低价值的 "ok" 会被遗忘，偏好类会被保留
+    # 2. 固化到长期：Reflector 打分，低于阈值 0.5 的候选被遗忘
     await working.append("s1", {"role": "user", "content": "ok"})
+    reflector = Reflector()
+    print("候选重要性评分:",
+          {c: reflector.score(c) for c in ["我总喜欢深色主题", "好的，已记住", "ok"]})
     inserted = await manager.consolidate(None, "s1", "t1", "u1")
-    print(f"固化 {inserted} 条（'ok' 因重要性 < 0.5 被遗忘）")
+    print(f"固化 {inserted} 条（'好的，已记住' 与 'ok' 因重要性 < 0.5 被遗忘）")
+
+    # 2.1 同一偏好再次出现：recall 返回高相似度 → 去重，不重复入库
+    await manager.write("s1", {"role": "user", "content": "我总喜欢深色主题"})
+    deduped = await manager.consolidate(None, "s1", "t1", "u1")
+    print(f"再次固化 {deduped} 条（相似度 >= 0.85 去重）")
 
     # 3. Agent 配合运行：计划阶段召回长期记忆注入 memory_ctx
     llm = ScriptedLLM([

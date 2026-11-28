@@ -4,6 +4,7 @@
 - Tool（旧协议 `run()`）经 `ToolAsPlugin` 适配成 Plugin，与 Skill 统一执行。
 - 自定义 Plugin 只需提供 `kind` / `manifest` / `invoke`，可直接 register。
 - 无论 Tool 还是 Plugin，最终都由 Agent 的 decide 节点从 OpenAI schema 里选择。
+- 更省事的函数式工具见 ``tool_decorator.py``；把工具委派给子 Agent 见 ``multi_agent.py``。
 运行：``python example/plugins_tools.py``
 """
 
@@ -12,6 +13,7 @@ import asyncio
 from _shared import ScriptedLLM, finish, tool_call
 
 from mainspring import AgentDefinition, AgentRuntime, RunContext, RuntimeDeps
+from mainspring.plugins.manifest import format_ref, parse_ref
 from mainspring.plugins.registry import PluginRegistry
 from mainspring.ports import InvokeContext, PluginManifest
 from mainspring.tools.base import BaseTool, ToolResult
@@ -66,7 +68,13 @@ async def main() -> None:
     print("OpenAI schema 暴露的函数:",
           [s["function"]["name"] for s in registry.to_openai_schema()])
 
-    # 3. 交给 Agent：LLM 根据 schema 选择调用
+    # 3. 引用与命名：裸名 / kind:name@version / function_name 都能反查
+    print("ref 解析:", parse_ref("tool:weather@1"), "| ref 生成:", format_ref("skill", "refund", "1.2.0"))
+    print("按裸名/ref 反查:", registry.get("weather").manifest.name,
+          registry.get("tool:weather@1").manifest.name)
+    print("非 tool 的 function_name 前缀:", PluginManifest(name="refund", kind="skill").function_name)
+
+    # 4. 交给 Agent：LLM 根据 schema 选择调用
     llm = ScriptedLLM([
         tool_call("weather", {"city": "北京"}),
         finish("北京今天晴，22℃"),

@@ -378,7 +378,13 @@ await manager.consolidate(db, session_id, tenant_id, user_id)          # 短期�
 
 ## 完整示例
 
-`example/` 目录下有每个模块的可运行示例（权限/HITL、事件流式、记忆、知识、可靠性、多厂商 fallback、评测等）。典型的高危审批 + 恢复流程：
+`example/` 目录下有每个模块的可运行示例（最小闭环、`@tool`、四形态 Skill、多 Agent 委派、记忆/向量化/知识、权限/HITL 与 SQLite 持久化检查点、token 级流式、结构化输出、上下文预算、可靠性、多厂商 fallback、可观测性、安全脱敏、HTTP/OpenAPI/MCP、重放与评测、成本感知等）。一键运行：
+
+```bash
+python example/run_all.py
+```
+
+典型的高危审批 + 恢复流程：
 
 ```python
 result = await runtime.run(definition, "删除账号 u42", context, deps)
